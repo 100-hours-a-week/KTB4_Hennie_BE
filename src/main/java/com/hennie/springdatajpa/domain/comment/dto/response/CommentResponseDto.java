@@ -16,11 +16,15 @@ public class CommentResponseDto {
 
     public CommentResponseDto(Comment comment) {
         this.commentId = comment.getId();
-        this.nickname = comment.isDeleted() ? null : comment.getAuthor().getNickname();
+        this.nickname = comment.isDeleted()
+                ? null
+                : comment.getAuthor().isAuthorDeleted()
+                    ? "알 수 없음"
+                    : comment.getAuthor().getNickname();
         this.content = comment.getContent();
         this.createdAt = comment.getFormattedCreatedAt();
         this.isDeleted = comment.isDeleted();
-        this.replies = comment.getReplies().stream()
+        this.replies = comment.getChildren().stream()
                 .map(ReplyResponseDto::new)
                 .toList();
     }

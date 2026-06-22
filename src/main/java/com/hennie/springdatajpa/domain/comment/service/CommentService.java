@@ -14,6 +14,7 @@ import com.hennie.springdatajpa.global.exception.ForbiddenException;
 import com.hennie.springdatajpa.global.exception.NotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Objects;
 
@@ -25,18 +26,18 @@ public class CommentService {
     private final PostRepository postRepository;
     private final UserRepository userRepository;
 
-    // @Transactional
+    @Transactional
     public CommentResponseDto createComment(Long userId, Long postId, CommentRequestDto request) {
-        validateCommentablePost(postId);
+        Post post = validateCommentablePost(postId);
         User author = getUser(userId);
 
-        Comment comment = new Comment(postId, author, request.getContent());
+        Comment comment = new Comment(post, author, request.getContent());
         Comment savedComment = commentRepository.save(comment);
 
         return new CommentResponseDto(savedComment);
     }
 
-    // @Transactional
+    @Transactional
     public CommentResponseDto updateComment(Long userId, Long postId, Long commentId, CommentRequestDto request) {
         validateCommentablePost(postId);
         Comment comment = getComment(postId, commentId);
@@ -54,7 +55,7 @@ public class CommentService {
         return new CommentResponseDto(comment);
     }
 
-    // @Transactional
+    @Transactional
     public void deleteComment(Long userId, Long postId, Long commentId) {
         validateCommentablePost(postId);
         Comment comment = getComment(postId, commentId);
@@ -68,13 +69,14 @@ public class CommentService {
     }
 
     // 게시글 존재 확인
-    private void validateCommentablePost(Long postId) {
+    private Post validateCommentablePost(Long postId) {
         Post post = postRepository.findById(postId)
                 .orElseThrow(() -> new NotFoundException("POST_NOT_FOUND"));
 
         if (post.getStatus() != PostStatus.PUBLISHED || post.isBlinded()) {
             throw new ForbiddenException("FORBIDDEN");
         }
+        return post;
     }
 
     private User getUser(Long userId) {

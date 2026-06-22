@@ -11,11 +11,17 @@ public class UserResponseDto {
     private String email;
     private String nickname;
     private String profileUrl;
+    private boolean authorDeleted;
+    private String createdAt;
+    private String modifiedAt;
 
     public UserResponseDto(User user) {
         this.id = user.getId();
         this.email = user.getEmail();
         this.nickname = user.getNickname();
         this.profileUrl = user.getProfileUrl();
+        this.authorDeleted = user.isAuthorDeleted();
+        this.createdAt = user.getFormattedCreatedAt();
+        this.modifiedAt = user.getFormattedModifiedAt();
     }
 }

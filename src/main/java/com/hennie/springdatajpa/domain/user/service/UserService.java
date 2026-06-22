@@ -6,12 +6,12 @@ import com.hennie.springdatajpa.domain.user.dto.response.UserResponseDto;
 import com.hennie.springdatajpa.domain.user.entity.User;
 import com.hennie.springdatajpa.global.exception.DuplicateResourceException;
 import com.hennie.springdatajpa.global.exception.NotFoundException;
-import com.hennie.springdatajpa.domain.post.repository.PostRepository;
 import com.hennie.springdatajpa.domain.user.repository.UserRepository;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Positive;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
 
 @Service
@@ -20,10 +20,8 @@ import org.springframework.validation.annotation.Validated;
 public class UserService {
 
     private final UserRepository userRepository;
-    private final PostRepository postRepository;
 
-    // DB 사용 시:
-    // @Transactional
+    @Transactional
     public UserResponseDto createUser(@Valid UserRequestDto request) {
         if (userRepository.existsByEmail(request.getEmail())) {
             throw new DuplicateResourceException("EMAIL_ALREADY_EXISTS");
@@ -43,14 +41,14 @@ public class UserService {
         return new UserResponseDto(savedUser);
     }
 
-    // @Transactional(readOnly = true)
+    @Transactional(readOnly = true)
     public UserResponseDto getUser(Long userId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new NotFoundException("USER_NOT_FOUND"));
         return new UserResponseDto(user);
     }
 
-    // @Transactional
+    @Transactional
     public UserResponseDto updateUser(
             @Positive Long userId,
             @Valid UserInfoRequestDto request
@@ -73,11 +71,11 @@ public class UserService {
         return new UserResponseDto(user);
     }
 
-    // @Transactional
+    @Transactional
     public void deleteUser(Long userId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new NotFoundException("USER_NOT_FOUND"));
-        postRepository.anonymizeAuthorById(user.getId());
-        userRepository.deleteById(userId);
+        // 소프트 삭제: 레코드를 지우지 않고 authorDeleted 플래그만 세움.
+        user.markAsDeleted();
     }
 }

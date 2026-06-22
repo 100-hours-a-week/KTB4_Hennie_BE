@@ -12,7 +12,6 @@ import lombok.NoArgsConstructor;
 public class UserRequestDto {
     @Email(message = "올바른 이메일 주소 형식을 입력해주세요.")
     @NotBlank(message = "이메일은 필수값입니다.")
-    @Pattern(regexp = "^[A-Za-z@.]+$", message = "이메일은 영문과 @, . 만 사용 가능합니다.")
     private String email;
 
     @NotBlank(message = "비밀번호는 필수값입니다.")
@@ -28,6 +27,6 @@ public class UserRequestDto {
     @Size(max = 10, message = "닉네임은 최대 10자 까지 작성 가능합니다.")
     private String nickname;
 
-    @NotBlank(message = "프로필 이미지는 필수값입니다.")
+    // 프로필 사진은 선택값
     private String profileUrl;
 }

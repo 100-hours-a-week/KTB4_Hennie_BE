@@ -4,6 +4,7 @@ import com.hennie.springdatajpa.domain.post.dto.request.DraftRequestDto;
 import com.hennie.springdatajpa.domain.post.dto.request.PostRequestDto;
 import com.hennie.springdatajpa.domain.post.dto.response.*;
 import com.hennie.springdatajpa.domain.post.service.PostService;
+import com.hennie.springdatajpa.domain.report.dto.request.ReportRequestDto;
 import com.hennie.springdatajpa.global.response.ApiResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -52,7 +53,7 @@ public class PostController {
         PostDetailResponseDto result = postService.getPost(currentUserId, postId);
 
         return ResponseEntity.ok(
-                ApiResponse.of("getPostSuccess", result)
+                ApiResponse.of("GET_POST_SUCCESS", result)
         );
     }
 
@@ -82,11 +83,12 @@ public class PostController {
     // 게시글 신고
     @PostMapping("/{postId}/reports")
     public ResponseEntity<ApiResponse<PostReportResponseDto>> reportPost(
-            @PathVariable Long postId
+            @PathVariable Long postId,
+            @Valid @RequestBody ReportRequestDto request
     ) {
         Long userId = 1L; // TODO: 로그인 인증 붙이면 현재 사용자 id로 교체
 
-        PostReportResponseDto result = postService.reportPost(userId, postId);
+        PostReportResponseDto result = postService.reportPost(userId, postId, request.getReason());
         return ResponseEntity.ok(
                 ApiResponse.of("REPORT_POST_SUCCESS", result)
         );

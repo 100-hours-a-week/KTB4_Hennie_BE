@@ -5,13 +5,15 @@ import com.hennie.springdatajpa.domain.post.entity.Post;
 import com.hennie.springdatajpa.domain.post.entity.PostStatus;
 import lombok.NoArgsConstructor;
 
+import java.util.List;
+
 @Getter
 @NoArgsConstructor
 public class PostResponseDto {
     private Long id;
     private String title;
     private String content;
-    private String image;
+    private List<String> images;
     private Long authorId;
     private PostStatus status;
 
@@ -19,8 +21,8 @@ public class PostResponseDto {
         this.id = post.getId();
         this.title = post.getTitle();
         this.content = post.getContent();
-        this.image = post.getImage();
-        this.authorId = post.getAuthor() == null ? null : post.getAuthor().getId();
+        this.images = post.getImageUrls();
+        this.authorId = post.getAuthor().getId();
         this.status = post.getStatus();
     }
 }

@@ -1,56 +1,84 @@
 package com.hennie.springdatajpa.domain.post.entity;
 
 import com.hennie.springdatajpa.domain.user.entity.User;
+import jakarta.persistence.*;
 import lombok.Getter;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
 
-import java.time.format.DateTimeFormatter;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.List;
 
-// DB 사용 시:
-// @Entity
+@Entity
+@Table(name = "post")
 @Getter
-// @RequiredArgsConstructor
 public class Post {
 
     public static final DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
-    // @Id
-    // @GeneratedValue(strategy = GenerationType.IDENTITY)
-    // @Column(name = "post_id")
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "post_id")
     private Long id;
+
+    @Column(length = 26, nullable = false)
     private String title;
+
+    @Column(columnDefinition = "TEXT", nullable = false)
     private String content;
-    private String image;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
     private PostStatus status;
+
+    @CreationTimestamp
+    @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
+
+    @UpdateTimestamp
+    @Column(nullable = false)
     private LocalDateTime modifiedAt;
+
     private int viewCount;
     private int reportCount;
     private boolean blinded;
     private boolean edited;
 
-    // @ManyToOne(fetch = FetchType.LAZY)
-    // @JoinColumn(name = "user_id")
+    // 1 사용자: N 게시글 (양방향)
+    // 게시글은 작성자에 대한 외래 키를 가짐
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id", nullable = false) // FK
     private User author;
 
-    public Post(String title, String content, String image, User author, PostStatus status) {
+    // 1 게시글: N 이미지 (양방향)
+    @OneToMany(fetch = FetchType.LAZY, mappedBy = "post", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<PostImage> images = new ArrayList<>();
+
+    public Post(String title, String content, User author, PostStatus status) {
         this.title = title;
         this.content = content;
-        this.image = image;
         this.author = author;
         this.status = status;
-        this.createdAt = LocalDateTime.now();
-        this.modifiedAt = this.createdAt;
     }
 
-    public void assignId(Long id) {
-        if (this.id == null) {
-            this.id = id;
+    public Post() {
+
+    }
+
+    // 이미지 전체 교체 (orphanRemoval로 기존 이미지 삭제 후 새 목록 등록)
+    public void replaceImages(List<String> urls) {
+        this.images.clear();
+        if (urls != null) {
+            for (String url : urls) {
+                this.images.add(new PostImage(this, url, this.images.size()));
+            }
         }
     }
 
-    public void anonymizeAuthor() {
-        this.author = null;
+    public List<String> getImageUrls() {
+        return images.stream().map(PostImage::getUrl).toList();
     }
 
     public void increaseViewCount() {
@@ -74,44 +102,33 @@ public class Post {
 
     private void markEdited() {
         this.edited = true;
-        this.modifiedAt = LocalDateTime.now();
     }
 
-    public void update(String title, String content, String image) {
+    public void update(String title, String content, List<String> imageUrls) {
         this.title = title;
         this.content = content;
-        this.image = image;
+        replaceImages(imageUrls);
         markEdited();
     }
 
-    public void updateDraft(String title, String content, String image) {
-        boolean updated = false;
-
+    public void updateDraft(String title, String content, List<String> imageUrls) {
         if (title != null) {
             this.title = title;
-            updated = true;
         }
 
         if (content != null) {
             this.content = content;
-            updated = true;
         }
 
-        if (image != null) {
-            this.image = image;
-            updated = true;
-        }
-
-        if (updated) {
-            this.modifiedAt = LocalDateTime.now();
+        if (imageUrls != null) {
+            replaceImages(imageUrls);
         }
     }
 
-    public void publish(String title, String content, String image) {
+    public void publish(String title, String content, List<String> imageUrls) {
         this.title = title;
         this.content = content;
-        this.image = image;
+        replaceImages(imageUrls);
         this.status = PostStatus.PUBLISHED;
-        this.modifiedAt = LocalDateTime.now();
     }
 }

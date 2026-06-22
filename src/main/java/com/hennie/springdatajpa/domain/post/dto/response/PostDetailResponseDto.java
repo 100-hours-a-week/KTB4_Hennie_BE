@@ -10,10 +10,13 @@ import java.util.List;
 
 @Getter
 public class PostDetailResponseDto {
+    private static final String BLINDED_TITLE = "숨김 처리된 게시글";
+    private static final String BLINDED_CONTENT = "신고 누적으로 숨김 처리된 게시글입니다.";
+
     private Long postId;
     private String title;
     private String content;
-    private String image;
+    private List<String> images;
     private String nickname;
     private String createdAt;
     private String modifiedAt;
@@ -35,17 +38,19 @@ public class PostDetailResponseDto {
             List<Comment> comments
     ) {
         this.postId = post.getId();
-        this.title = post.getTitle();
-        this.content = post.getContent();
-        this.image = post.getImage();
-        this.nickname = post.getAuthor().getNickname();;
+        this.title = post.isBlinded() ? BLINDED_TITLE : post.getTitle();
+        this.content = post.isBlinded() ? BLINDED_CONTENT : post.getContent();
+        this.images = post.isBlinded() ? List.of() : post.getImageUrls();
+        this.nickname = post.getAuthor().isAuthorDeleted()
+                ? "알 수 없음"
+                : post.getAuthor().getNickname();
         this.createdAt = post.getFormattedCreatedAt();
         this.modifiedAt = post.getFormattedModifiedAt();
         this.viewCount = post.getViewCount();
         this.likeCount = likeCount;
         this.isLiked = liked;
         this.commentCount = commentCount;
-        this.comments = comments.stream()
+        this.comments = post.isBlinded() ? List.of() : comments.stream()
                 .map(CommentResponseDto::new)
                 .toList();
         this.status = post.getStatus();

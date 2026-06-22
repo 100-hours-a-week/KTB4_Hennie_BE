@@ -8,19 +8,20 @@ import com.hennie.springdatajpa.domain.post.dto.request.PostRequestDto;
 import com.hennie.springdatajpa.domain.post.dto.response.*;
 import com.hennie.springdatajpa.domain.post.entity.Post;
 import com.hennie.springdatajpa.domain.post.entity.PostEditHistory;
-import com.hennie.springdatajpa.domain.post.entity.PostReport;
 import com.hennie.springdatajpa.domain.post.entity.PostStatus;
-import com.hennie.springdatajpa.domain.post.repository.PostReportRepository;
+import com.hennie.springdatajpa.domain.post.repository.PostEditHistoryRepository;
 import com.hennie.springdatajpa.domain.post.repository.PostRepository;
+import com.hennie.springdatajpa.domain.report.entity.Report;
+import com.hennie.springdatajpa.domain.report.repository.ReportRepository;
 import com.hennie.springdatajpa.domain.user.entity.User;
 import com.hennie.springdatajpa.domain.user.repository.UserRepository;
 import com.hennie.springdatajpa.global.exception.BadRequestException;
 import com.hennie.springdatajpa.global.exception.DuplicateResourceException;
 import com.hennie.springdatajpa.global.exception.ForbiddenException;
 import com.hennie.springdatajpa.global.exception.NotFoundException;
-import com.hennie.springdatajpa.global.store.InMemoryDataStore;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Comparator;
 import java.util.List;
@@ -31,13 +32,13 @@ import java.util.Objects;
 public class PostService {
 
     private final PostRepository postRepository;
-    private final PostReportRepository postReportRepository;
+    private final ReportRepository reportRepository;
+    private final PostEditHistoryRepository postEditHistoryRepository;
     private final CommentRepository commentRepository;
     private final PostLikeRepository postLikeRepository;
     private final UserRepository userRepository;
-    private final InMemoryDataStore store;
 
-    // @Transactional(readOnly = true)
+    @Transactional(readOnly = true)
     // 게시글 목록 조회
     public PostListResponseDto getPublishedPosts(int page, int size) {
         if (page < 1 || size < 1) {
@@ -67,7 +68,7 @@ public class PostService {
         return new PostListResponseDto(posts, page, size, totalCount, totalPages, hasNext);
     }
 
-    // @Transactional
+    @Transactional
     // 게시글 발행
     public PostResponseDto createPost(Long userId, PostRequestDto request) {
         User author = userRepository.findById(userId)
@@ -81,10 +82,10 @@ public class PostService {
         Post post = new Post(
                 request.getTitle(),
                 request.getContent(),
-                request.getImage(),
                 author,
                 PostStatus.PUBLISHED
         );
+        post.replaceImages(request.getImages());
 
         Post savedPost = postRepository.save(post);
         return new PostResponseDto(savedPost);
@@ -94,19 +95,17 @@ public class PostService {
         Post post = postRepository.findById(request.getPostId())
                 .orElseThrow(() -> new NotFoundException("POST_NOT_FOUND"));
 
-        if (post.getAuthor() == null || !post.getAuthor().getId().equals(userId)) {
-            throw new ForbiddenException("FORBIDDEN");
-        }
+        validatePostOwner(post, userId);
 
         if (post.getStatus() != PostStatus.DRAFT) {
             throw new BadRequestException("NOT_DRAFT_POST");
         }
 
-        post.publish(request.getTitle(), request.getContent(), request.getImage());
+        post.publish(request.getTitle(), request.getContent(), request.getImages());
         return new PostResponseDto(post);
     }
 
-    // @Transactional(readOnly = true)
+    @Transactional
     // 게시글 상세 조회
     public PostDetailResponseDto getPost(Long userId, Long postId) {
         Post post = postRepository.findById(postId)
@@ -116,11 +115,9 @@ public class PostService {
             throw new ForbiddenException("FORBIDDEN");
         }
 
-        if (post.isBlinded()) {
-            throw new ForbiddenException("FORBIDDEN");
+        if (!post.isBlinded()) {
+            post.increaseViewCount();
         }
-
-        post.increaseViewCount();
 
         List<Comment> comments = commentRepository.findByPostIdOrderByCreatedAtAsc(postId);
         int likeCount = Math.toIntExact(postLikeRepository.countByPostId(postId));
@@ -130,15 +127,13 @@ public class PostService {
         return new PostDetailResponseDto(post, likeCount, liked, commentCount, comments);
     }
 
-    // @Transactional
+    @Transactional
     // 게시글 수정
     public PostResponseDto updatePost(Long userId, Long postId, PostRequestDto request) {
         Post post = postRepository.findById(postId)
                 .orElseThrow(() -> new NotFoundException("POST_NOT_FOUND"));
 
-        if (post.getAuthor() == null || !post.getAuthor().getId().equals(userId)) {
-            throw new ForbiddenException("FORBIDDEN");
-        }
+        validatePostOwner(post, userId);
 
         if (post.getStatus() != PostStatus.PUBLISHED || post.isBlinded()) {
             throw new ForbiddenException("FORBIDDEN");
@@ -148,21 +143,20 @@ public class PostService {
             throw new BadRequestException("noChangedValue");
         }
 
-        // 게시글 히스토리 저장
+        // 게시글 히스토리 저장 (이미지 목록은 한 컬럼에 콤마로 합쳐 스냅샷)
         PostEditHistory history = new PostEditHistory(
                 post.getId(),
                 userId,
                 post.getTitle(),
                 post.getContent(),
-                post.getImage(),
+                String.join(",", post.getImageUrls()),
                 request.getTitle(),
                 request.getContent(),
-                request.getImage()
+                String.join(",", nullToEmpty(request.getImages()))
         );
-        history.assignId(store.nextPostEditHistoryId());
-        store.getPostEditHistories().put(history.getId(), history);
+        postEditHistoryRepository.save(history);
 
-        post.update(request.getTitle(), request.getContent(), request.getImage());
+        post.update(request.getTitle(), request.getContent(), request.getImages());
 
         return new PostResponseDto(post);
     }
@@ -170,38 +164,45 @@ public class PostService {
     private boolean isNotChanged(Post post, PostRequestDto request) {
         return Objects.equals(post.getTitle(), request.getTitle())
                 && Objects.equals(post.getContent(), request.getContent())
-                && Objects.equals(post.getImage(), request.getImage());
+                && Objects.equals(post.getImageUrls(), nullToEmpty(request.getImages()));
     }
 
-    // @Transactional
+    private static List<String> nullToEmpty(List<String> urls) {
+        return urls == null ? List.of() : urls;
+    }
+
+    @Transactional
     // 게시글 신고
-    public PostReportResponseDto reportPost(Long userId, Long postId) {
+    public PostReportResponseDto reportPost(Long userId, Long postId, String reason) {
         Post post = postRepository.findById(postId)
                 .orElseThrow(() -> new NotFoundException("POST_NOT_FOUND"));
 
-        if (postReportRepository.existsByPostIdAndReporterId(postId, userId)) {
+        if (reportRepository.existsByPostIdAndReporterId(postId, userId)) {
             throw new DuplicateResourceException("ALREADY_REPORTED_POST");
         }
 
-        PostReport postReport = new PostReport(postId, userId);
-        postReportRepository.save(postReport);
+        User reporter = userRepository.findById(userId)
+                .orElseThrow(() -> new NotFoundException("USER_NOT_FOUND"));
+        Report report = Report.forPost(reporter, post, reason);
+        reportRepository.save(report);
 
         post.report();
 
         return new PostReportResponseDto(post);
     }
 
-    // @Transactional
+    @Transactional
     // 게시글 삭제
     public void deletePost(Long postId) {
         postRepository.findById(postId)
                 .orElseThrow(() -> new NotFoundException("POST_NOT_FOUND"));
-        commentRepository.deleteById(postId);
-        postLikeRepository.deleteById(postId);
+        commentRepository.deleteByPostId(postId);
+        postLikeRepository.deleteByPostId(postId);
+        reportRepository.deleteByPostId(postId);
         postRepository.deleteById(postId);
     }
 
-    // @Transactional
+    @Transactional
     // 게시글 처음 임시저장
     public DraftResponseDto createDraftPost(Long userId, DraftRequestDto request) {
         User author = userRepository.findById(userId)
@@ -210,16 +211,16 @@ public class PostService {
         Post post = new Post(
                 request.getTitle(),
                 request.getContent(),
-                request.getImage(),
                 author,
                 PostStatus.DRAFT
         );
+        post.replaceImages(request.getImages());
 
         Post savedPost = postRepository.save(post);
         return new DraftResponseDto(savedPost);
     }
 
-    // @Transactional(readOnly = true)
+    @Transactional(readOnly = true)
     // 임시저장된 게시글 목록 조회
     public DraftListResponseDto getDraftPosts(Long userId) {
         userRepository.findById(userId)
@@ -236,23 +237,23 @@ public class PostService {
         return new DraftListResponseDto(drafts);
     }
 
-    // @Transactional(readOnly = true)
+    @Transactional(readOnly = true)
     // 임시저장된 게시글 상세 조회
     public DraftResponseDto getDraftPost(Long userId, Long postId) {
         Post post = getDraftPostForAuthor(userId, postId);
         return new DraftResponseDto(post);
     }
 
-    // @Transactional
+    @Transactional
     // 게시글 재임시저장
     public DraftResponseDto updateDraftPost(Long userId, Long postId, DraftRequestDto request) {
         Post post = getDraftPostForAuthor(userId, postId);
 
-        post.updateDraft(request.getTitle(), request.getContent(), request.getImage());
+        post.updateDraft(request.getTitle(), request.getContent(), request.getImages());
         return new DraftResponseDto(post);
     }
 
-    // @Transactional
+    @Transactional
     // 임시저장된 게시글 삭제
     public void deleteDraftPost(Long userId, Long postId) {
         getDraftPostForAuthor(userId, postId);
@@ -263,14 +264,19 @@ public class PostService {
         Post post = postRepository.findById(postId)
                 .orElseThrow(() -> new NotFoundException("POST_NOT_FOUND"));
 
-        if (post.getAuthor() == null || !post.getAuthor().getId().equals(userId)) {
-            throw new ForbiddenException("FORBIDDEN");
-        }
+        validatePostOwner(post, userId);
 
         if (post.getStatus() != PostStatus.DRAFT) {
             throw new ForbiddenException("FORBIDDEN");
         }
 
         return post;
+    }
+
+    // 게시글 작성자 본인인지 검증 (author는 NOT NULL 이라 null 검사 불필요)
+    private void validatePostOwner(Post post, Long userId) {
+        if (!post.getAuthor().getId().equals(userId)) {
+            throw new ForbiddenException("FORBIDDEN");
+        }
     }
 }

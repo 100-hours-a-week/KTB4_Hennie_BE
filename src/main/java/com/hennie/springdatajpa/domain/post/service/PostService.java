@@ -9,8 +9,10 @@ import com.hennie.springdatajpa.domain.post.dto.response.*;
 import com.hennie.springdatajpa.domain.post.entity.Post;
 import com.hennie.springdatajpa.domain.post.entity.PostEditHistory;
 import com.hennie.springdatajpa.domain.post.entity.PostStatus;
+import com.hennie.springdatajpa.domain.post.entity.PostView;
 import com.hennie.springdatajpa.domain.post.repository.PostEditHistoryRepository;
 import com.hennie.springdatajpa.domain.post.repository.PostRepository;
+import com.hennie.springdatajpa.domain.post.repository.PostViewRepository;
 import com.hennie.springdatajpa.domain.report.entity.Report;
 import com.hennie.springdatajpa.domain.report.repository.ReportRepository;
 import com.hennie.springdatajpa.domain.user.entity.User;
@@ -34,6 +36,7 @@ public class PostService {
     private final PostRepository postRepository;
     private final ReportRepository reportRepository;
     private final PostEditHistoryRepository postEditHistoryRepository;
+    private final PostViewRepository postViewRepository;
     private final CommentRepository commentRepository;
     private final PostLikeRepository postLikeRepository;
     private final UserRepository userRepository;
@@ -115,9 +118,7 @@ public class PostService {
             throw new ForbiddenException("FORBIDDEN");
         }
 
-        if (!post.isBlinded()) {
-            post.increaseViewCount();
-        }
+        increaseViewCountIfFirstView(userId, post);
 
         List<Comment> comments = commentRepository.findByPostIdOrderByCreatedAtAsc(postId);
         int likeCount = Math.toIntExact(postLikeRepository.countByPostId(postId));
@@ -171,6 +172,21 @@ public class PostService {
         return urls == null ? List.of() : urls;
     }
 
+    private void increaseViewCountIfFirstView(Long userId, Post post) {
+        if (post.isBlinded()) {
+            return;
+        }
+
+        if (postViewRepository.existsByPostIdAndUserId(post.getId(), userId)) {
+            return;
+        }
+
+        User viewer = userRepository.findById(userId)
+                .orElseThrow(() -> new NotFoundException("USER_NOT_FOUND"));
+        postViewRepository.save(new PostView(post, viewer));
+        post.increaseViewCount();
+    }
+
     @Transactional
     // 게시글 신고
     public PostReportResponseDto reportPost(Long userId, Long postId, String reason) {
@@ -196,6 +212,7 @@ public class PostService {
     public void deletePost(Long postId) {
         postRepository.findById(postId)
                 .orElseThrow(() -> new NotFoundException("POST_NOT_FOUND"));
+        postViewRepository.deleteByPostId(postId);
         commentRepository.deleteByPostId(postId);
         postLikeRepository.deleteByPostId(postId);
         reportRepository.deleteByPostId(postId);

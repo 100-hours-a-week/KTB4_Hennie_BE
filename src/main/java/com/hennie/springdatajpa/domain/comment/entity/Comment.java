@@ -38,6 +38,7 @@ public class Comment {
     private LocalDateTime modifiedAt;
 
     private boolean deleted;
+    private boolean edited;
 
     // 자기참조: parent == null 이면 댓글, not null 이면 대댓글
     @ManyToOne(fetch = FetchType.LAZY)
@@ -60,6 +61,7 @@ public class Comment {
 
     public void update(String content) {
         this.content = content;
+        this.edited = true;
     }
 
     public void delete() {

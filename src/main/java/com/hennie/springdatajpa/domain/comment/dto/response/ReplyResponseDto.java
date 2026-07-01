@@ -10,6 +10,7 @@ public class ReplyResponseDto {
     private String content;
     private String createdAt;
     private boolean isDeleted;
+    private boolean isEdited;
 
     // 대댓글은 부모를 가진 Comment(자기참조)
     public ReplyResponseDto(Comment reply) {
@@ -22,5 +23,6 @@ public class ReplyResponseDto {
         this.content = reply.getContent();
         this.createdAt = reply.getFormattedCreatedAt();
         this.isDeleted = reply.isDeleted();
+        this.isEdited = reply.isEdited();
     }
 }

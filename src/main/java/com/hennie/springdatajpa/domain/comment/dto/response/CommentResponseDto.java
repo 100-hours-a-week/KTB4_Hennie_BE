@@ -12,6 +12,7 @@ public class CommentResponseDto {
     private String content;
     private String createdAt;
     private boolean isDeleted;
+    private boolean isEdited;
     private List<ReplyResponseDto> replies;
 
     public CommentResponseDto(Comment comment) {
@@ -24,6 +25,7 @@ public class CommentResponseDto {
         this.content = comment.getContent();
         this.createdAt = comment.getFormattedCreatedAt();
         this.isDeleted = comment.isDeleted();
+        this.isEdited = comment.isEdited();
         this.replies = comment.getChildren().stream()
                 .map(ReplyResponseDto::new)
                 .toList();

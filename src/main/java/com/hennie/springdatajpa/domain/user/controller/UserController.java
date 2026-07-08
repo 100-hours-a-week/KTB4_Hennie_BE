@@ -111,8 +111,10 @@ public class UserController {
     }
 
     // 회원정보 조회
-    @GetMapping("/{userId}")
-    public ResponseEntity<ApiResponse<UserResponseDto>> getUser(@PathVariable Long userId){
+    @GetMapping("/myInfo")
+    public ResponseEntity<ApiResponse<UserResponseDto>> getUser(
+            @AuthenticationPrincipal Long userId
+    ) {
         UserResponseDto result = userService.getUser(userId);
         return ResponseEntity.ok(
                 ApiResponse.of("GET_INFO_SUCCESS", result)
@@ -120,9 +122,9 @@ public class UserController {
     }
 
     // 회원정보 수정
-    @PatchMapping("/{userId}")
+    @PatchMapping("/myInfo")
     public ResponseEntity<ApiResponse<UserResponseDto>> updateNickname(
-            @PathVariable Long userId,
+            @AuthenticationPrincipal Long userId,
             @Valid @RequestBody UserInfoRequestDto request
     ) {
         UserResponseDto result = userService.updateUser(userId, request);
@@ -144,8 +146,10 @@ public class UserController {
     }
 
     // 회원 탈퇴
-    @DeleteMapping("/{userId}")
-    public ResponseEntity<ApiResponse<Void>> deleteUser(@PathVariable Long userId){
+    @DeleteMapping("/myInfo")
+    public ResponseEntity<ApiResponse<Void>> deleteUser(
+            @AuthenticationPrincipal Long userId
+    ) {
         userService.deleteUser(userId);
         return ResponseEntity
                 .status(HttpStatus.OK)

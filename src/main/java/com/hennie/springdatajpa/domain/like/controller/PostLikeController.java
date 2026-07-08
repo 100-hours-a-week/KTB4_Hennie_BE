@@ -6,6 +6,7 @@ import com.hennie.springdatajpa.global.response.ApiResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -22,10 +23,9 @@ public class PostLikeController {
     // 좋아요
     @PostMapping
     public ResponseEntity<ApiResponse<PostLikeResponseDto>> likePost(
+            @AuthenticationPrincipal Long userId,
             @PathVariable Long postId
     ) {
-        Long userId = 1L; // TODO: 로그인 인증 붙이면 현재 사용자 id로 교체
-
         PostLikeResponseDto result = postLikeService.likePost(userId, postId);
         return ResponseEntity
                 .status(HttpStatus.CREATED)
@@ -35,10 +35,9 @@ public class PostLikeController {
     // 좋아요 취소
     @DeleteMapping
     public ResponseEntity<ApiResponse<PostLikeResponseDto>> unlikePost(
+            @AuthenticationPrincipal Long userId,
             @PathVariable Long postId
     ) {
-        Long userId = 1L; // TODO: 로그인 인증 붙이면 현재 사용자 id로 교체
-
         PostLikeResponseDto result = postLikeService.unlikePost(userId, postId);
         return ResponseEntity.ok(
                 ApiResponse.of("POST_UNLIKED", result)

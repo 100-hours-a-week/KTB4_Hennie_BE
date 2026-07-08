@@ -122,7 +122,7 @@ public class PostService {
 
         List<Comment> comments = commentRepository.findByPostIdOrderByCreatedAtAsc(postId);
         int likeCount = Math.toIntExact(postLikeRepository.countByPostId(postId));
-        boolean liked = postLikeRepository.existsByPostIdAndUserId(postId, userId);
+        boolean liked = userId != null && postLikeRepository.existsByPostIdAndUserId(postId, userId);
         int commentCount = Math.toIntExact(commentRepository.countByPostId(postId));
 
         return new PostDetailResponseDto(post, likeCount, liked, commentCount, comments);
@@ -173,7 +173,7 @@ public class PostService {
     }
 
     private void increaseViewCountIfFirstView(Long userId, Post post) {
-        if (post.isBlinded()) {
+        if (userId == null || post.isBlinded()) {
             return;
         }
 
@@ -209,9 +209,15 @@ public class PostService {
 
     @Transactional
     // 게시글 삭제
-    public void deletePost(Long postId) {
-        postRepository.findById(postId)
+    public void deletePost(Long userId, Long postId) {
+        User author = userRepository.findById(userId)
+                .orElseThrow(() -> new NotFoundException("USER_NOT_FOUND"));
+
+        Post post = postRepository.findById(postId)
                 .orElseThrow(() -> new NotFoundException("POST_NOT_FOUND"));
+
+        validatePostOwner(post, userId);
+
         postViewRepository.deleteByPostId(postId);
         commentRepository.deleteByPostId(postId);
         postLikeRepository.deleteByPostId(postId);

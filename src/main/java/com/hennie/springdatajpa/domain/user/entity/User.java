@@ -29,13 +29,13 @@ public class User {
     @Column(name = "user_id")
     private Long id;
 
-    @Column(nullable = false)
+    @Column(nullable = false, unique = true)
     private String email;
 
-    @Column(nullable = false)
+    @Column(nullable = false, length = 60) // BCrypt 해시는 60자로 고정
     private String password;
 
-    @Column(nullable = false)
+    @Column(nullable = false, unique = true)
     private String nickname;
 
     private String profileUrl;
@@ -55,8 +55,7 @@ public class User {
     @OneToMany(fetch = FetchType.LAZY, mappedBy = "author")
     private List<Post> posts = new ArrayList<>();
 
-    public User() {
-
+    protected User() {
     }
 
     public User(String email, String password, String nickname, String profileUrl) {

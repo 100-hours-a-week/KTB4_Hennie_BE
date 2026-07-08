@@ -13,19 +13,24 @@ spring:
       path: /h2-console
   sql:
     init:
-      mode: always
+      mode: never
   jpa:
     hibernate:
       ddl-auto: create
-    # data.sql이 Hibernate의 스키마 생성보다 먼저 실행되지 않도록 지연
-    defer-datasource-initialization: true
     properties:
       hibernate:
         format_sql: true
     show-sql: true
+  profiles:
+    active: development
 
 logging:
   level:
     org.springframework.jdbc.core.JdbcTemplate: DEBUG
     org.springframework.jdbc.core.StatementCreatorUtils: TRACE
-    org.hibernate.SQL: DEBUG
+    org.hibernate.SQL: WARN
+
+jwt:
+  secret: 3W8i2bTUFAf+rQtb6SV01OHnNEpqlntH/wfO770lw/gm3n2onNxHNNtbik6mNux7aNlMD0jsZHzdE2mYZe8vlA==
+  access-token-exp-seconds: 300
+  refresh-token-exp-seconds: 12096000

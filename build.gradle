@@ -1,5 +1,6 @@
 plugins {
 	id 'java'
+	id 'jacoco'
 	id 'org.springframework.boot' version '4.0.6'
 	id 'io.spring.dependency-management' version '1.1.7'
 }
@@ -20,12 +21,16 @@ repositories {
 dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-webmvc'
 	implementation 'org.springframework.boot:spring-boot-starter-validation'
-
 	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
 	implementation 'org.springframework.boot:spring-boot-starter-jdbc'
 	implementation 'com.github.gavlyukovskiy:p6spy-spring-boot-starter:1.12.0'
+	implementation 'io.jsonwebtoken:jjwt-api:0.12.6'
+	implementation 'org.springframework.boot:spring-boot-starter-security'
+
 	developmentOnly 'org.springframework.boot:spring-boot-h2console'
 	runtimeOnly 'com.h2database:h2'
+	runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.12.6'
+	runtimeOnly 'io.jsonwebtoken:jjwt-jackson:0.12.6'
 
 	compileOnly 'org.projectlombok:lombok'
 	developmentOnly 'org.springframework.boot:spring-boot-devtools'
@@ -39,4 +44,47 @@ dependencies {
 
 tasks.named('test') {
 	useJUnitPlatform()
+	finalizedBy jacocoTestReport
+	testLogging {
+		showStandardStreams = true          // 테스트의 System.out 출력을 콘솔에 표시
+		events "passed", "failed", "skipped"
+	}
+}
+
+jacoco {
+	toolVersion = "0.8.12"
+}
+
+// 커버리지 측정 초점: 유저 도메인. 로직 없는 DTO는 제외(레이어별 차등 목표)
+def userDomainCoverageClasses = { ->
+	files(sourceSets.main.output.classesDirs.files.collect {
+		fileTree(dir: it,
+				include: ['com/hennie/springdatajpa/domain/user/**'],
+				exclude: ['com/hennie/springdatajpa/domain/user/dto/**'])
+	})
+}
+
+jacocoTestReport {
+	dependsOn tasks.named('test')
+	reports {
+		html.required = true
+		xml.required = true
+	}
+	classDirectories.setFrom(userDomainCoverageClasses())
+}
+
+// 레이어별 차등 목표: Service 브랜치 90%, Entity 라인 90%
+jacocoTestCoverageVerification {
+	classDirectories.setFrom(userDomainCoverageClasses())
+	violationRules {
+		rule {
+			element = 'CLASS'
+			includes = ['com.hennie.springdatajpa.domain.user.service.*']
+			limit {
+				counter = 'BRANCH'
+				value = 'COVEREDRATIO'
+				minimum = 1
+			}
+		}
+	}
 }

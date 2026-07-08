@@ -66,13 +66,16 @@ public class User {
         this.profileUrl = profileUrl;
     }
 
-
     public void changeNickname(String nickname) {
         this.nickname = nickname;
     }
 
     public void changeProfileUrl(String profileUrl) {
         this.profileUrl = profileUrl;
+    }
+
+    public void changePassword(String encodedPassword) {
+        this.password = encodedPassword;
     }
 
     // soft delete: 탈퇴 표시

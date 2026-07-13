@@ -52,7 +52,7 @@ public class UserController {
                 .secure(false)
                 .path("/")
                 .maxAge(14*24*60*60)
-                .sameSite("Strict")
+                .sameSite("Lax")
                 .build();
 
         // 쿠키 응답 헤더에 추가
@@ -101,7 +101,7 @@ public class UserController {
                 .secure(false)
                 .path("/")
                 .maxAge(0)
-                .sameSite("Strict")
+                .sameSite("Lax")
                 .build();
         httpResponse.addHeader(HttpHeaders.SET_COOKIE, expiredCookie.toString());
 

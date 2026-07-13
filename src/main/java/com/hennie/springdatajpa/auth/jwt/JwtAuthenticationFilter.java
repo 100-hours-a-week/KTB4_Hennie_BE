@@ -1,6 +1,5 @@
 package com.hennie.springdatajpa.auth.jwt;
 
-import com.hennie.springdatajpa.auth.support.SecurityErrorResponseWriter;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -20,7 +19,6 @@ import java.util.List;
 @RequiredArgsConstructor
 public class JwtAuthenticationFilter extends OncePerRequestFilter { // 요청에 포함된 JWT 액세스 토큰이 유효한지 HTTP 요청에 대해 한 번씩 검증
     private final JwtProvider jwtProvider;
-    private final SecurityErrorResponseWriter securityErrorResponseWriter;
 
     @Override
     protected void doFilterInternal(
@@ -50,8 +48,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter { // 요청에
                 }
             } catch (Exception exception) {
                 SecurityContextHolder.clearContext();
-                securityErrorResponseWriter.writeUnauthorized(response);
-                return;
             }
         }
         filterChain.doFilter(request, response);

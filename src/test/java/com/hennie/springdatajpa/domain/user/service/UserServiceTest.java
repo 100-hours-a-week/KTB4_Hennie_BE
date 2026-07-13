@@ -156,7 +156,8 @@ class UserServiceTest {
             LoginResultDto result = userService.login(request);
 
             // then
-            assertThat(result.getResponse().getUser()).isEqualTo(user);
+            assertThat(result.getResponse().getUser().getId()).isEqualTo(user.getId());
+            assertThat(result.getResponse().getUser().getNickname()).isEqualTo(user.getNickname());
             assertThat(result.getResponse().getToken().getAccessToken()).isEqualTo("ACCESS_TOKEN");
             assertThat(result.getResponse().getToken().getExpiresIn()).isEqualTo(300000L);
             assertThat(result.getRefreshToken()).isEqualTo("REFRESH_TOKEN");

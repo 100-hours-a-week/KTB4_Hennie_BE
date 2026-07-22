@@ -54,6 +54,7 @@ public class Post {
 
     // 1 게시글: N 이미지 (양방향)
     @OneToMany(fetch = FetchType.LAZY, mappedBy = "post", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OrderBy("sortOrder ASC")
     private List<PostImage> images = new ArrayList<>();
 
     public Post(String title, String content, User author, PostStatus status) {

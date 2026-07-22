@@ -13,6 +13,7 @@ public class DraftResponseDto {
     private String title;
     private String content;
     private List<String> images;
+    private String createdAt;
     private String modifiedAt;
     private PostStatus status;
 
@@ -22,6 +23,7 @@ public class DraftResponseDto {
         this.title = post.getTitle();
         this.content = post.getContent();
         this.images = post.getImageUrls();
+        this.createdAt = post.getFormattedCreatedAt();
         this.modifiedAt = post.getFormattedModifiedAt();
         this.status = post.getStatus();
     }

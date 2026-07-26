@@ -81,6 +81,23 @@ public class LocalImageService {
                 : baseUrl + "/" + storedFileName;
     }
 
+    public void deleteByUrl(String imageUrl) {
+        String baseUrl = imageProperties.getBaseUrl();
+        String normalizedBaseUrl = baseUrl.endsWith("/") ? baseUrl : baseUrl + "/";
+
+        if (imageUrl == null || !imageUrl.startsWith(normalizedBaseUrl)) {
+            return;
+        }
+
+        String storedFileName = imageUrl.substring(normalizedBaseUrl.length());
+        Path target = uploadDirectory.resolve(storedFileName).normalize();
+        if (storedFileName.isBlank() || !target.getParent().equals(uploadDirectory)) {
+            return;
+        }
+
+        tryDelete(target);
+    }
+
     private void tryDelete(Path path) {
         try {
             Files.deleteIfExists(path);

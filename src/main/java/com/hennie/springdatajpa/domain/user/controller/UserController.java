@@ -1,5 +1,6 @@
 package com.hennie.springdatajpa.domain.user.controller;
 
+import com.hennie.springdatajpa.auth.config.RefreshCookieProperties;
 import com.hennie.springdatajpa.auth.dto.LoginResultDto;
 import com.hennie.springdatajpa.auth.dto.TokenInfo;
 import com.hennie.springdatajpa.auth.dto.TokenResultDto;
@@ -9,6 +10,7 @@ import com.hennie.springdatajpa.domain.user.dto.request.PasswordChangeRequestDto
 import com.hennie.springdatajpa.domain.user.dto.request.UserInfoRequestDto;
 import com.hennie.springdatajpa.domain.user.dto.request.UserRequestDto;
 import com.hennie.springdatajpa.domain.user.dto.response.UserResponseDto;
+import com.hennie.springdatajpa.domain.user.service.UserSignupService;
 import com.hennie.springdatajpa.domain.user.service.UserService;
 import com.hennie.springdatajpa.global.response.ApiResponse;
 import jakarta.servlet.http.HttpServletResponse;
@@ -16,22 +18,31 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 @RestController
 @RequestMapping("/users")
 @RequiredArgsConstructor
 public class UserController {
 
+    private static final String REFRESH_TOKEN_COOKIE_NAME = "refreshToken";
+
     private final UserService userService;
+    private final UserSignupService userSignupService;
+    private final RefreshCookieProperties refreshCookieProperties;
 
     // 회원가입
-    @PostMapping("/signup")
-    public ResponseEntity<ApiResponse<UserResponseDto>> createUser(@Valid @RequestBody UserRequestDto request) {
-        UserResponseDto result = userService.createUser(request);
+    @PostMapping(value = "/signup", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<ApiResponse<UserResponseDto>> createUser(
+            @Valid @RequestPart("request") UserRequestDto request,
+            @RequestPart(value = "profileImage", required = false) MultipartFile profileImage
+    ) {
+        UserResponseDto result = userSignupService.signup(request, profileImage);
         return ResponseEntity
                 .status(HttpStatus.CREATED)
                 .header("Location", "/users/" + result.getId())
@@ -46,14 +57,10 @@ public class UserController {
     ){
         LoginResultDto result = userService.login(request);
 
-        ResponseCookie refreshCookie = ResponseCookie
-                .from("refreshToken", result.getRefreshToken())
-                .httpOnly(true)
-                .secure(false)
-                .path("/")
-                .maxAge(14*24*60*60)
-                .sameSite("Lax")
-                .build();
+        ResponseCookie refreshCookie = createRefreshCookie(
+                result.getRefreshToken(),
+                refreshCookieProperties.getMaxAgeSeconds()
+        );
 
         // 쿠키 응답 헤더에 추가
         httpResponse.addHeader(HttpHeaders.SET_COOKIE, refreshCookie.toString());
@@ -66,20 +73,17 @@ public class UserController {
     // 액세스 토큰 재발급
     @PostMapping("/token/refresh")
     public ResponseEntity<ApiResponse<TokenInfo>> refreshAccessToken(
-            @CookieValue(name = "refreshToken", required = false) String refreshToken,
+            @CookieValue(name = REFRESH_TOKEN_COOKIE_NAME, required = false) String refreshToken,
             HttpServletResponse httpResponse
     ){
         TokenResultDto result = userService.refreshAccessToken(refreshToken);
 
         // Refresh Token 회전 시 새 쿠키 세팅
         if (result.getNewRefreshToken() != null) {
-            ResponseCookie cookie = ResponseCookie.from("refreshToken", result.getNewRefreshToken())
-                    .httpOnly(true)
-                    .secure(false)
-                    .path("/")
-                    .maxAge(14*24*60*60)
-                    .sameSite("Lax")
-                    .build();
+            ResponseCookie cookie = createRefreshCookie(
+                    result.getNewRefreshToken(),
+                    refreshCookieProperties.getMaxAgeSeconds()
+            );
             httpResponse.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
         }
 
@@ -96,13 +100,7 @@ public class UserController {
     ) {
         userService.logout(userId);
 
-        ResponseCookie expiredCookie = ResponseCookie.from("refreshToken", "")
-                .httpOnly(true)
-                .secure(false)
-                .path("/")
-                .maxAge(0)
-                .sameSite("Lax")
-                .build();
+        ResponseCookie expiredCookie = createRefreshCookie("", 0);
         httpResponse.addHeader(HttpHeaders.SET_COOKIE, expiredCookie.toString());
 
         return ResponseEntity
@@ -154,5 +152,15 @@ public class UserController {
         return ResponseEntity
                 .status(HttpStatus.OK)
                 .body(ApiResponse.of("USER_DELETED", null));
+    }
+
+    private ResponseCookie createRefreshCookie(String token, long maxAgeSeconds) {
+        return ResponseCookie.from(REFRESH_TOKEN_COOKIE_NAME, token)
+                .httpOnly(true)
+                .secure(refreshCookieProperties.isSecure())
+                .path("/")
+                .maxAge(maxAgeSeconds)
+                .sameSite(refreshCookieProperties.getSameSite())
+                .build();
     }
 }

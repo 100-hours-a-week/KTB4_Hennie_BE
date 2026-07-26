@@ -39,7 +39,7 @@ public class UserService {
     private final PasswordEncoder passwordEncoder;
 
     @Transactional
-    public UserResponseDto createUser(@Valid UserRequestDto request) {
+    public UserResponseDto createUser(@Valid UserRequestDto request, String profileUrl) {
         if (userRepository.existsByEmail(request.getEmail())) {
             throw new DuplicateResourceException("EMAIL_ALREADY_EXISTS");
         }
@@ -52,7 +52,7 @@ public class UserService {
                 request.getEmail(),
                 passwordEncoder.encode(request.getPassword()),
                 request.getNickname(),
-                request.getProfileUrl()
+                profileUrl
         );
         User savedUser = userRepository.save(user);
         return new UserResponseDto(savedUser);

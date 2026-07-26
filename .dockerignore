@@ -1,0 +1,15 @@
+.git
+.gitignore
+.gradle
+.idea
+.vscode
+.DS_Store
+
+build
+uploads
+
+*.log
+.env
+.env.*
+
+gradlew.bat

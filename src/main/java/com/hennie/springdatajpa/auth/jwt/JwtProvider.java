@@ -3,14 +3,13 @@ package com.hennie.springdatajpa.auth.jwt;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jws;
 import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
 import javax.crypto.SecretKey;
-import java.nio.charset.StandardCharsets;
-import java.security.Key;
 import java.time.Instant;
 import java.util.Date;
 import java.util.Map;
@@ -19,13 +18,19 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class JwtProvider { // JWT 생성/파싱/검증 기능
     private final JwtProperties jwtProperties;
-    private Key key;
+    private SecretKey key;
 
     @PostConstruct
-    public void init() { // yaml 내 비밀키 문자열을 UTF-8 바이트로 변환해서 서명용 키 생성
-        this.key = Keys.hmacShaKeyFor(
-                jwtProperties.getSecret().getBytes(StandardCharsets.UTF_8)
-        );
+    public void init() { // Base64 문자열을 디코딩해서 서명용 키 생성
+        String secret = jwtProperties.getSecret();
+
+        if (secret == null || secret.isBlank() || secret.contains("${")) {
+            throw new IllegalStateException(
+                    "JWT_SECRET 환경변수가 설정되지 않았습니다."
+            );
+        }
+
+        this.key = Keys.hmacShaKeyFor(Decoders.BASE64.decode(secret.trim()));
     }
 
     private String createToken( // 액세스 토큰과 리프레쉬 토큰 발급하는 로직 담당
@@ -42,7 +47,7 @@ public class JwtProvider { // JWT 생성/파싱/검증 기능
                 .claims(claims)
                 .issuedAt(Date.from(now))
                 .expiration(Date.from(now.plusSeconds(expSeconds)))
-                .signWith((SecretKey) key, Jwts.SIG.HS256) // 대칭키로 서명을 만든다.
+                .signWith(key, Jwts.SIG.HS256) // 대칭키로 서명을 만든다.
                 .compact();
     }
 
@@ -66,7 +71,7 @@ public class JwtProvider { // JWT 생성/파싱/검증 기능
 
     public Jws<Claims> parse(String token) {
         return Jwts.parser()
-                .verifyWith((SecretKey) key) // 매 요청마다 key로 서명이 일치하는지 확인
+                .verifyWith(key) // 매 요청마다 key로 서명이 일치하는지 확인
                 .build()
                 .parseSignedClaims(token);
     }

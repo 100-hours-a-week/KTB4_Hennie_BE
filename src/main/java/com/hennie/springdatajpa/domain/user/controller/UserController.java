@@ -10,6 +10,7 @@ import com.hennie.springdatajpa.domain.user.dto.request.PasswordChangeRequestDto
 import com.hennie.springdatajpa.domain.user.dto.request.UserInfoRequestDto;
 import com.hennie.springdatajpa.domain.user.dto.request.UserRequestDto;
 import com.hennie.springdatajpa.domain.user.dto.response.UserResponseDto;
+import com.hennie.springdatajpa.domain.user.service.UserProfileUpdateService;
 import com.hennie.springdatajpa.domain.user.service.UserSignupService;
 import com.hennie.springdatajpa.domain.user.service.UserService;
 import com.hennie.springdatajpa.global.response.ApiResponse;
@@ -34,6 +35,7 @@ public class UserController {
 
     private final UserService userService;
     private final UserSignupService userSignupService;
+    private final UserProfileUpdateService userProfileUpdateService;
     private final RefreshCookieProperties refreshCookieProperties;
 
     // 회원가입
@@ -120,12 +122,13 @@ public class UserController {
     }
 
     // 회원정보 수정
-    @PatchMapping("/myInfo")
-    public ResponseEntity<ApiResponse<UserResponseDto>> updateNickname(
+    @PatchMapping(value = "/myInfo", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<ApiResponse<UserResponseDto>> updateUser(
             @AuthenticationPrincipal Long userId,
-            @Valid @RequestBody UserInfoRequestDto request
+            @Valid @RequestPart("request") UserInfoRequestDto request,
+            @RequestPart(value = "profileImage", required = false) MultipartFile profileImage
     ) {
-        UserResponseDto result = userService.updateUser(userId, request);
+        UserResponseDto result = userProfileUpdateService.update(userId, request, profileImage);
         return ResponseEntity
                 .status(HttpStatus.OK)
                 .body(ApiResponse.of("UPDATE_INFO_SUCCESS", result));

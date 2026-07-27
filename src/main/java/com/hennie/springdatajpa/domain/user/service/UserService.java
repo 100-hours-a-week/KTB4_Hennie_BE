@@ -144,6 +144,15 @@ public class UserService {
             @Positive Long userId,
             @Valid UserInfoRequestDto request
     ) {
+        return updateUser(userId, request, request.getProfileUrl());
+    }
+
+    @Transactional
+    public UserResponseDto updateUser(
+            @Positive Long userId,
+            @Valid UserInfoRequestDto request,
+            String profileUrl
+    ) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new NotFoundException("USER_NOT_FOUND"));
 
@@ -155,8 +164,8 @@ public class UserService {
             user.changeNickname(request.getNickname());
         }
 
-        if (request.getProfileUrl() != null) {
-            user.changeProfileUrl(request.getProfileUrl());
+        if (profileUrl != null) {
+            user.changeProfileUrl(profileUrl);
         }
 
         return new UserResponseDto(user);

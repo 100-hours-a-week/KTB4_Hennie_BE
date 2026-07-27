@@ -9,6 +9,7 @@ import java.util.List;
 public class CommentResponseDto {
     private Long commentId;
     private String nickname;
+    private String profileUrl;
     private String content;
     private String createdAt;
     private boolean isDeleted;
@@ -22,6 +23,7 @@ public class CommentResponseDto {
                 : comment.getAuthor().isAuthorDeleted()
                     ? "알 수 없음"
                     : comment.getAuthor().getNickname();
+        this.profileUrl = comment.getAuthor().isAuthorDeleted() ? null : comment.getAuthor().getProfileUrl();
         this.content = comment.getContent();
         this.createdAt = comment.getFormattedCreatedAt();
         this.isDeleted = comment.isDeleted();

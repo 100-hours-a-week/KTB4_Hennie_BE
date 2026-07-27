@@ -13,14 +13,17 @@ public class PostListItemResponseDto {
     private int commentCount;
     private int viewCount;
     private String createdAt;
+    private String profileUrl;
 
     public PostListItemResponseDto(Post post, int likeCount, int commentCount) {
         this.postId = post.getId();
         this.title = post.isBlinded() ? "숨김 처리된 게시글" : post.getTitle();
         this.nickname = post.getAuthor().isAuthorDeleted() ? "알 수 없음" : post.getAuthor().getNickname();
+        this.profileUrl = post.getAuthor().isAuthorDeleted() ? null : post.getAuthor().getProfileUrl();
         this.likeCount = likeCount;
         this.commentCount = commentCount;
         this.viewCount = post.getViewCount();
         this.createdAt = post.getFormattedCreatedAt();
+
     }
 }

@@ -18,6 +18,7 @@ public class PostDetailResponseDto {
     private String content;
     private List<String> images;
     private String nickname;
+    private String profileUrl;
     private String createdAt;
     private String modifiedAt;
     private int viewCount;
@@ -44,6 +45,7 @@ public class PostDetailResponseDto {
         this.nickname = post.getAuthor().isAuthorDeleted()
                 ? "알 수 없음"
                 : post.getAuthor().getNickname();
+        this.profileUrl = post.getAuthor().isAuthorDeleted() ? null : post.getAuthor().getProfileUrl();
         this.createdAt = post.getFormattedCreatedAt();
         this.modifiedAt = post.getFormattedModifiedAt();
         this.viewCount = post.getViewCount();

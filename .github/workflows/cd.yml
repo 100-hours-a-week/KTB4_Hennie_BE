@@ -90,10 +90,17 @@ jobs:
           envs: GHCR_USER,GHCR_TOKEN
           script: |
             set -e
+            COMPOSE_FILE="$HOME/devbadak-infra/compose.prod.yaml"
+            if [ ! -f "$COMPOSE_FILE" ]; then
+              echo "compose 파일이 없습니다: $COMPOSE_FILE"
+              echo "INFRA 레포의 CD를 먼저 실행해 파일을 배치하세요."
+              exit 1
+            fi
             echo "$GHCR_TOKEN" | docker login ghcr.io -u "$GHCR_USER" --password-stdin
             cd ~/devbadak-infra
             docker compose -f compose.prod.yaml pull backend
-            docker compose -f compose.prod.yaml up -d backend
+            # --no-deps: FE 레포가 관리하는 frontend 서비스를 건드리지 않는다.
+            docker compose -f compose.prod.yaml up -d --no-deps backend
             docker logout ghcr.io
             docker image prune -f
         env:

@@ -8,6 +8,7 @@ import java.util.List;
 @Getter
 public class CommentResponseDto {
     private Long commentId;
+    private Long authorId;
     private String nickname;
     private String profileUrl;
     private String content;
@@ -18,12 +19,17 @@ public class CommentResponseDto {
 
     public CommentResponseDto(Comment comment) {
         this.commentId = comment.getId();
+        this.authorId = comment.isDeleted() || comment.getAuthor().isAuthorDeleted()
+                ? null
+                : comment.getAuthor().getId();
         this.nickname = comment.isDeleted()
                 ? null
                 : comment.getAuthor().isAuthorDeleted()
                     ? "알 수 없음"
                     : comment.getAuthor().getNickname();
-        this.profileUrl = comment.getAuthor().isAuthorDeleted() ? null : comment.getAuthor().getProfileUrl();
+        this.profileUrl = comment.isDeleted() || comment.getAuthor().isAuthorDeleted()
+                ? null
+                : comment.getAuthor().getProfileUrl();
         this.content = comment.getContent();
         this.createdAt = comment.getFormattedCreatedAt();
         this.isDeleted = comment.isDeleted();

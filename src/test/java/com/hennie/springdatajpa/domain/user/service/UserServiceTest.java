@@ -53,12 +53,11 @@ class UserServiceTest {
         return dto;
     }
 
-    private UserRequestDto signupRequestDto(String email, String password, String nickname, String profileUrl) {
+    private UserRequestDto signupRequestDto(String email, String password, String nickname) {
         UserRequestDto dto = new UserRequestDto();
         ReflectionTestUtils.setField(dto, "email", email);
         ReflectionTestUtils.setField(dto, "password", password);
         ReflectionTestUtils.setField(dto, "nickname", nickname);
-        ReflectionTestUtils.setField(dto, "profileUrl", profileUrl);
         return dto;
     }
 
@@ -90,32 +89,37 @@ class UserServiceTest {
         @Test
         void 회원가입_성공() {
             // given
-            UserRequestDto request = signupRequestDto("tester1@adapterz.kr", "Raw1!", "nick", "img");
+            UserRequestDto request = signupRequestDto("tester1@adapterz.kr", "Raw1!", "nick");
             given(userRepository.existsByEmail("tester1@adapterz.kr")).willReturn(false);
             given(userRepository.existsByNickname("nick")).willReturn(false);
             given(passwordEncoder.encode("Raw1!")).willReturn("ENCODED_PWD");
+            User savedUser = persistedUser(1L, "tester1@adapterz.kr", "ENCODED_PWD", "nick");
+            savedUser.changeProfileUrl("img");
             given(userRepository.save(any(User.class)))
-                    .willReturn(persistedUser(1L, "tester1@adapterz.kr", "ENCODED_PWD", "nick"));
+                    .willReturn(savedUser);
 
             // when
-            UserResponseDto result = userService.createUser(request);
+            UserResponseDto result = userService.createUser(request, "img");
 
             // then
             assertThat(result.getId()).isEqualTo(1L);
             assertThat(result.getEmail()).isEqualTo("tester1@adapterz.kr");
             assertThat(result.getNickname()).isEqualTo("nick");
+            assertThat(result.getProfileUrl()).isEqualTo("img");
 
-            verify(userRepository).save(any(User.class));
+            ArgumentCaptor<User> captor = ArgumentCaptor.forClass(User.class);
+            verify(userRepository).save(captor.capture());
+            assertThat(captor.getValue().getProfileUrl()).isEqualTo("img");
         }
 
         @Test
         void 이메일_중복() {
             // given
-            UserRequestDto request = signupRequestDto("tester1@adapterz.kr", "Raw1!", "nick", null);
+            UserRequestDto request = signupRequestDto("tester1@adapterz.kr", "Raw1!", "nick");
             given(userRepository.existsByEmail("tester1@adapterz.kr")).willReturn(true);
 
             // when & then
-            assertThatThrownBy(() -> userService.createUser(request))
+            assertThatThrownBy(() -> userService.createUser(request, null))
                     .isInstanceOf(DuplicateResourceException.class)
                     .hasMessage("EMAIL_ALREADY_EXISTS");
             verify(userRepository, never()).save(any());
@@ -124,12 +128,12 @@ class UserServiceTest {
         @Test
         void 닉네임_중복() {
             // given
-            UserRequestDto request = signupRequestDto("tester1@adapterz.kr", "Raw1!", "dupNick", null);
+            UserRequestDto request = signupRequestDto("tester1@adapterz.kr", "Raw1!", "dupNick");
             given(userRepository.existsByEmail("tester1@adapterz.kr")).willReturn(false);
             given(userRepository.existsByNickname("dupNick")).willReturn(true);
 
             // when & then
-            assertThatThrownBy(() -> userService.createUser(request))
+            assertThatThrownBy(() -> userService.createUser(request, null))
                     .isInstanceOf(DuplicateResourceException.class)
                     .hasMessage("NICKNAME_ALREADY_EXISTS");
             verify(userRepository, never()).save(any());

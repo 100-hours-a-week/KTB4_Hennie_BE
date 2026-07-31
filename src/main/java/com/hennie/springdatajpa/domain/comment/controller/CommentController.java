@@ -1,7 +1,9 @@
 package com.hennie.springdatajpa.domain.comment.controller;
 
 import com.hennie.springdatajpa.domain.comment.dto.request.CommentRequestDto;
+import com.hennie.springdatajpa.domain.comment.dto.request.ReplyCreateRequestDto;
 import com.hennie.springdatajpa.domain.comment.dto.response.CommentResponseDto;
+import com.hennie.springdatajpa.domain.comment.dto.response.ReplyResponseDto;
 import com.hennie.springdatajpa.domain.comment.service.CommentService;
 import com.hennie.springdatajpa.global.response.ApiResponse;
 import jakarta.validation.Valid;
@@ -61,6 +63,55 @@ public class CommentController {
         commentService.deleteComment(userId, postId, commentId);
         return ResponseEntity.ok(
                 ApiResponse.of("COMMENT_DELETED", null)
+        );
+    }
+
+    // 대댓글 작성
+    @PostMapping("/{commentId}/replies")
+    public ResponseEntity<ApiResponse<ReplyResponseDto>> createReply(
+            @AuthenticationPrincipal Long userId,
+            @PathVariable Long postId,
+            @PathVariable Long commentId,
+            @Valid @RequestBody ReplyCreateRequestDto request
+    ) {
+        ReplyResponseDto result = commentService.createReply(userId, postId, commentId, request);
+        return ResponseEntity
+                .status(HttpStatus.CREATED)
+                .body(ApiResponse.of("REPLY_CREATED", result));
+    }
+
+    // 대댓글 수정
+    @PatchMapping("/{commentId}/replies/{replyId}")
+    public ResponseEntity<ApiResponse<ReplyResponseDto>> updateReply(
+            @AuthenticationPrincipal Long userId,
+            @PathVariable Long postId,
+            @PathVariable Long commentId,
+            @PathVariable Long replyId,
+            @Valid @RequestBody CommentRequestDto request
+    ) {
+        ReplyResponseDto result = commentService.updateReply(
+                userId,
+                postId,
+                commentId,
+                replyId,
+                request
+        );
+        return ResponseEntity.ok(
+                ApiResponse.of("REPLY_UPDATED", result)
+        );
+    }
+
+    // 대댓글 삭제
+    @DeleteMapping("/{commentId}/replies/{replyId}")
+    public ResponseEntity<ApiResponse<Void>> deleteReply(
+            @AuthenticationPrincipal Long userId,
+            @PathVariable Long postId,
+            @PathVariable Long commentId,
+            @PathVariable Long replyId
+    ) {
+        commentService.deleteReply(userId, postId, commentId, replyId);
+        return ResponseEntity.ok(
+                ApiResponse.of("REPLY_DELETED", null)
         );
     }
 }

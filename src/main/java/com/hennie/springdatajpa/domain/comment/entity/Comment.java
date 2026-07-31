@@ -44,15 +44,31 @@ public class Comment {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "parent_id")
     private Comment parent;
+    // 댓글에 달린 답글
+    // 실제 답글 대상. 대댓글 목록의 깊이는 parent로, 멘션 대상은 replyTo로 구분한다.
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "reply_to_id")
+    private Comment replyTo;
 
     // 1 댓글: N 대댓글 (양방향)
     @OneToMany(fetch = FetchType.LAZY, mappedBy = "parent")
+    @OrderBy("createdAt ASC")
     private List<Comment> children = new ArrayList<>();
 
     public Comment(Post post, User author, String content) {
+        this(post, author, content, null);
+    }
+
+    public Comment(Post post, User author, String content, Comment parent) {
+        this(post, author, content, parent, parent);
+    }
+
+    public Comment(Post post, User author, String content, Comment parent, Comment replyTo) {
         this.post = post;
         this.author = author;
-        this.content = deleted ? "삭제된 댓글입니다" : content;
+        this.content = content;
+        this.parent = parent;
+        this.replyTo = replyTo;
     }
 
     public Comment() {

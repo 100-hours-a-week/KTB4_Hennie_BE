@@ -120,7 +120,7 @@ public class PostService {
 
         increaseViewCountIfFirstView(userId, post);
 
-        List<Comment> comments = commentRepository.findByPostIdOrderByCreatedAtAsc(postId);
+        List<Comment> comments = commentRepository.findByPostIdAndParentIsNullOrderByCreatedAtAsc(postId);
         int likeCount = Math.toIntExact(postLikeRepository.countByPostId(postId));
         boolean liked = userId != null && postLikeRepository.existsByPostIdAndUserId(postId, userId);
         int commentCount = Math.toIntExact(commentRepository.countByPostId(postId));

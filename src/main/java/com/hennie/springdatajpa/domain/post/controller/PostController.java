@@ -2,6 +2,7 @@ package com.hennie.springdatajpa.domain.post.controller;
 
 import com.hennie.springdatajpa.domain.post.dto.request.DraftRequestDto;
 import com.hennie.springdatajpa.domain.post.dto.request.PostRequestDto;
+import com.hennie.springdatajpa.domain.post.dto.request.PostUpdateRequestDto;
 import com.hennie.springdatajpa.domain.post.dto.response.*;
 import com.hennie.springdatajpa.domain.post.service.PostService;
 import com.hennie.springdatajpa.domain.report.dto.request.ReportRequestDto;
@@ -56,12 +57,12 @@ public class PostController {
         );
     }
 
-    // 게시글 수정
+    // 게시글 수정 (부분 수정)
     @PatchMapping("/{postId}")
     public ResponseEntity<ApiResponse<PostResponseDto>> updatePost(
             @AuthenticationPrincipal Long userId,
             @PathVariable Long postId,
-            @Valid @RequestBody PostRequestDto request
+            @Valid @RequestBody PostUpdateRequestDto request
     ) {
         PostResponseDto result = postService.updatePost(userId, postId, request);
         return ResponseEntity

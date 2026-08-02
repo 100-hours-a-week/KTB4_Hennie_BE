@@ -8,8 +8,6 @@ import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.List;
 
 @Entity
 @Table(name = "post")
@@ -52,34 +50,20 @@ public class Post {
     @JoinColumn(name = "user_id", nullable = false) // FK
     private User author;
 
-    // 1 게시글: N 이미지 (양방향)
-    @OneToMany(fetch = FetchType.LAZY, mappedBy = "post", cascade = CascadeType.ALL, orphanRemoval = true)
-    @OrderBy("sortOrder ASC")
-    private List<PostImage> images = new ArrayList<>();
+    @Enumerated(EnumType.STRING)
+    @Column(length = 10)
+    private PostCategory category;
 
-    public Post(String title, String content, User author, PostStatus status) {
+    public Post(String title, String content, User author, PostStatus status, PostCategory category) {
         this.title = title;
         this.content = content;
         this.author = author;
         this.status = status;
+        this.category = category;
     }
 
     public Post() {
 
-    }
-
-    // 이미지 전체 교체 (orphanRemoval로 기존 이미지 삭제 후 새 목록 등록)
-    public void replaceImages(List<String> urls) {
-        this.images.clear();
-        if (urls != null) {
-            for (String url : urls) {
-                this.images.add(new PostImage(this, url, this.images.size()));
-            }
-        }
-    }
-
-    public List<String> getImageUrls() {
-        return images.stream().map(PostImage::getUrl).toList();
     }
 
     public void increaseViewCount() {
@@ -105,14 +89,17 @@ public class Post {
         this.edited = true;
     }
 
-    public void update(String title, String content, List<String> imageUrls) {
-        this.title = title;
-        this.content = content;
-        replaceImages(imageUrls);
+    // 부분 수정: null로 들어온 필드는 기존 값 유지
+    public void update(String title, String content, PostCategory category) {
+        updateFields(title, content, category);
         markEdited();
     }
 
-    public void updateDraft(String title, String content, List<String> imageUrls) {
+    public void updateDraft(String title, String content, PostCategory category) {
+        updateFields(title, content, category);
+    }
+
+    private void updateFields(String title, String content, PostCategory category) {
         if (title != null) {
             this.title = title;
         }
@@ -121,15 +108,15 @@ public class Post {
             this.content = content;
         }
 
-        if (imageUrls != null) {
-            replaceImages(imageUrls);
+        if (category != null) {
+            this.category = category;
         }
     }
 
-    public void publish(String title, String content, List<String> imageUrls) {
+    public void publish(String title, String content, PostCategory category) {
         this.title = title;
         this.content = content;
-        replaceImages(imageUrls);
+        this.category = category;
         this.status = PostStatus.PUBLISHED;
     }
 }

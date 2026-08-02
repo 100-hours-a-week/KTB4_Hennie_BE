@@ -5,8 +5,10 @@ import com.hennie.springdatajpa.domain.comment.repository.CommentRepository;
 import com.hennie.springdatajpa.domain.like.repository.PostLikeRepository;
 import com.hennie.springdatajpa.domain.post.dto.request.DraftRequestDto;
 import com.hennie.springdatajpa.domain.post.dto.request.PostRequestDto;
+import com.hennie.springdatajpa.domain.post.dto.request.PostUpdateRequestDto;
 import com.hennie.springdatajpa.domain.post.dto.response.*;
 import com.hennie.springdatajpa.domain.post.entity.Post;
+import com.hennie.springdatajpa.domain.post.entity.PostCategory;
 import com.hennie.springdatajpa.domain.post.entity.PostEditHistory;
 import com.hennie.springdatajpa.domain.post.entity.PostStatus;
 import com.hennie.springdatajpa.domain.post.entity.PostView;
@@ -86,9 +88,9 @@ public class PostService {
                 request.getTitle(),
                 request.getContent(),
                 author,
-                PostStatus.PUBLISHED
+                PostStatus.PUBLISHED,
+                request.getCategory()
         );
-        post.replaceImages(request.getImages());
 
         Post savedPost = postRepository.save(post);
         return new PostResponseDto(savedPost);
@@ -104,7 +106,7 @@ public class PostService {
             throw new BadRequestException("NOT_DRAFT_POST");
         }
 
-        post.publish(request.getTitle(), request.getContent(), request.getImages());
+        post.publish(request.getTitle(), request.getContent(), request.getCategory());
         return new PostResponseDto(post);
     }
 
@@ -129,8 +131,8 @@ public class PostService {
     }
 
     @Transactional
-    // 게시글 수정
-    public PostResponseDto updatePost(Long userId, Long postId, PostRequestDto request) {
+    // 게시글 부분 수정
+    public PostResponseDto updatePost(Long userId, Long postId, PostUpdateRequestDto request) {
         Post post = postRepository.findById(postId)
                 .orElseThrow(() -> new NotFoundException("POST_NOT_FOUND"));
 
@@ -140,36 +142,59 @@ public class PostService {
             throw new ForbiddenException("FORBIDDEN");
         }
 
+        validateUpdateRequest(request);
+
         if (isNotChanged(post, request)) {
             throw new BadRequestException("noChangedValue");
         }
 
-        // 게시글 히스토리 저장 (이미지 목록은 한 컬럼에 콤마로 합쳐 스냅샷)
+        // 수정 후 값
+        String afterTitle = request.getTitle() != null ? request.getTitle() : post.getTitle();
+        String afterContent = request.getContent() != null ? request.getContent() : post.getContent();
+        PostCategory afterCategory = request.getCategory() != null ? request.getCategory() : post.getCategory();
+
+        // 게시글 히스토리 저장
         PostEditHistory history = new PostEditHistory(
                 post.getId(),
                 userId,
                 post.getTitle(),
                 post.getContent(),
-                String.join(",", post.getImageUrls()),
-                request.getTitle(),
-                request.getContent(),
-                String.join(",", nullToEmpty(request.getImages()))
+                post.getCategory(),
+                afterTitle,
+                afterContent,
+                afterCategory
         );
         postEditHistoryRepository.save(history);
 
-        post.update(request.getTitle(), request.getContent(), request.getImages());
+        post.update(request.getTitle(), request.getContent(), request.getCategory());
 
         return new PostResponseDto(post);
     }
 
-    private boolean isNotChanged(Post post, PostRequestDto request) {
-        return Objects.equals(post.getTitle(), request.getTitle())
-                && Objects.equals(post.getContent(), request.getContent())
-                && Objects.equals(post.getImageUrls(), nullToEmpty(request.getImages()));
+    private void validateUpdateRequest(PostUpdateRequestDto request) {
+        if (request.hasNoField()) {
+            throw new BadRequestException("NO_UPDATE_FIELD");
+        }
+
+        if (request.getTitle() != null && request.getTitle().isBlank()) {
+            throw new BadRequestException("제목은 필수값입니다.");
+        }
+
+        if (request.getContent() != null && request.getContent().isBlank()) {
+            throw new BadRequestException("내용은 필수값입니다.");
+        }
     }
 
-    private static List<String> nullToEmpty(List<String> urls) {
-        return urls == null ? List.of() : urls;
+    // 보낸 필드만 비교
+    private boolean isNotChanged(Post post, PostUpdateRequestDto request) {
+        boolean titleUnchanged = request.getTitle() == null
+                || Objects.equals(post.getTitle(), request.getTitle());
+        boolean contentUnchanged = request.getContent() == null
+                || Objects.equals(post.getContent(), request.getContent());
+        boolean categoryUnchanged = request.getCategory() == null
+                || post.getCategory() == request.getCategory();
+
+        return titleUnchanged && contentUnchanged && categoryUnchanged;
     }
 
     private void increaseViewCountIfFirstView(Long userId, Post post) {
@@ -235,9 +260,9 @@ public class PostService {
                 request.getTitle(),
                 request.getContent(),
                 author,
-                PostStatus.DRAFT
+                PostStatus.DRAFT,
+                request.getCategory()
         );
-        post.replaceImages(request.getImages());
 
         Post savedPost = postRepository.save(post);
         return new DraftResponseDto(savedPost);
@@ -272,7 +297,7 @@ public class PostService {
     public DraftResponseDto updateDraftPost(Long userId, Long postId, DraftRequestDto request) {
         Post post = getDraftPostForAuthor(userId, postId);
 
-        post.updateDraft(request.getTitle(), request.getContent(), request.getImages());
+        post.updateDraft(request.getTitle(), request.getContent(), request.getCategory());
         return new DraftResponseDto(post);
     }
 

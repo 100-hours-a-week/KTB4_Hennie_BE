@@ -1,10 +1,10 @@
 package com.hennie.springdatajpa.domain.post.dto.request;
 
+import com.hennie.springdatajpa.domain.post.entity.PostCategory;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-
-import java.util.List;
 
 @Getter
 @NoArgsConstructor
@@ -17,5 +17,6 @@ public class PostRequestDto {
     @NotBlank(message = "내용은 필수값입니다.")
     private String content;
 
-    private List<String> images;
+    @NotNull(message = "유형은 필수값입니다.")
+    private PostCategory category;
 }

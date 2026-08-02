@@ -3,6 +3,7 @@ package com.hennie.springdatajpa.domain.post.dto.response;
 import com.hennie.springdatajpa.domain.comment.dto.response.CommentResponseDto;
 import com.hennie.springdatajpa.domain.comment.entity.Comment;
 import com.hennie.springdatajpa.domain.post.entity.Post;
+import com.hennie.springdatajpa.domain.post.entity.PostCategory;
 import com.hennie.springdatajpa.domain.post.entity.PostStatus;
 import lombok.Getter;
 
@@ -16,7 +17,7 @@ public class PostDetailResponseDto {
     private Long postId;
     private String title;
     private String content;
-    private List<String> images;
+    private PostCategory category;
     private String nickname;
     private String profileUrl;
     private String createdAt;
@@ -41,7 +42,7 @@ public class PostDetailResponseDto {
         this.postId = post.getId();
         this.title = post.isBlinded() ? BLINDED_TITLE : post.getTitle();
         this.content = post.isBlinded() ? BLINDED_CONTENT : post.getContent();
-        this.images = post.isBlinded() ? List.of() : post.getImageUrls();
+        this.category = post.getCategory();
         this.nickname = post.getAuthor().isAuthorDeleted()
                 ? "알 수 없음"
                 : post.getAuthor().getNickname();

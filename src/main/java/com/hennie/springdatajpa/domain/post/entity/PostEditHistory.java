@@ -22,15 +22,17 @@ public class PostEditHistory {
     @Column(columnDefinition = "TEXT")
     private String beforeContent;
 
-    @Column(length = 1024)
-    private String beforeImageUrl;
+    @Enumerated(EnumType.STRING)
+    @Column(length = 10)
+    private PostCategory beforeCategory;
     private String afterTitle;
 
     @Column(columnDefinition = "TEXT")
     private String afterContent;
 
-    @Column(length = 1024)
-    private String afterImageUrl;
+    @Enumerated(EnumType.STRING)
+    @Column(length = 10)
+    private PostCategory afterCategory;
 
     @CreationTimestamp
     @Column(nullable = false, updatable = false)
@@ -41,19 +43,19 @@ public class PostEditHistory {
             Long editorId,
             String beforeTitle,
             String beforeContent,
-            String beforeImageUrl,
+            PostCategory beforeCategory,
             String afterTitle,
             String afterContent,
-            String afterImageUrl
+            PostCategory afterCategory
     ) {
         this.postId = postId;
         this.editorId = editorId;
         this.beforeTitle = beforeTitle;
         this.beforeContent = beforeContent;
-        this.beforeImageUrl = beforeImageUrl;
+        this.beforeCategory = beforeCategory;
         this.afterTitle = afterTitle;
         this.afterContent = afterContent;
-        this.afterImageUrl = afterImageUrl;
+        this.afterCategory = afterCategory;
     }
 
     public PostEditHistory() {

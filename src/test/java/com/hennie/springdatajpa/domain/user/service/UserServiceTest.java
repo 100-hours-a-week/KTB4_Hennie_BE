@@ -1,6 +1,7 @@
 package com.hennie.springdatajpa.domain.user.service;
 
 import com.hennie.springdatajpa.auth.dto.LoginResultDto;
+import com.hennie.springdatajpa.auth.dto.TokenResultDto;
 import com.hennie.springdatajpa.auth.dto.request.LoginRequestDto;
 import com.hennie.springdatajpa.auth.entity.RefreshToken;
 import com.hennie.springdatajpa.auth.jwt.JwtProvider;
@@ -155,9 +156,13 @@ class UserServiceTest {
                     .willReturn("ACCESS_TOKEN");
             given(jwtProvider.createRefreshToken(1L)).willReturn("REFRESH_TOKEN");
             given(jwtProvider.getAccessTokenValidityInMilliseconds()).willReturn(300000L);
+            given(jwtProvider.getRefreshTokenValidityInSeconds()).willReturn(86400L);
+
+            LocalDateTime expectedExpiresAtStart = LocalDateTime.now().plusSeconds(86400L);
 
             // when
             LoginResultDto result = userService.login(request);
+            LocalDateTime expectedExpiresAtEnd = LocalDateTime.now().plusSeconds(86400L);
 
             // then
             assertThat(result.getResponse().getUser().getId()).isEqualTo(user.getId());
@@ -172,7 +177,8 @@ class UserServiceTest {
             verify(refreshTokenRepository).save(captor.capture());
             assertThat(captor.getValue().getToken()).isEqualTo("REFRESH_TOKEN");
             assertThat(captor.getValue().getUserId()).isEqualTo(1L);
-            assertThat(captor.getValue().getExpiresAt()).isAfter(LocalDateTime.now());
+            assertThat(captor.getValue().getExpiresAt())
+                    .isBetween(expectedExpiresAtStart, expectedExpiresAtEnd);
         }
 
         @Test
@@ -209,6 +215,46 @@ class UserServiceTest {
             verify(jwtProvider, never()).createAccessToken(any(), any(), any());
             verify(jwtProvider, never()).createRefreshToken(any());
             verify(refreshTokenRepository, never()).save(any());
+        }
+    }
+
+    @Nested
+    class RefreshAccessToken {
+
+        @Test
+        void 재발급된_리프레시_토큰의_DB_만료는_설정값을_사용한다() {
+            // given
+            RefreshToken savedToken = new RefreshToken(
+                    "OLD_REFRESH_TOKEN",
+                    1L,
+                    LocalDateTime.now().plusDays(1)
+            );
+            User user = persistedUser(1L, "tester1@adapterz.kr", "ENCODED_PWD", "nick");
+
+            given(refreshTokenRepository.findByToken("OLD_REFRESH_TOKEN"))
+                    .willReturn(Optional.of(savedToken));
+            given(userRepository.findById(1L)).willReturn(Optional.of(user));
+            given(jwtProvider.createAccessToken(1L, "tester1@adapterz.kr", "nick"))
+                    .willReturn("NEW_ACCESS_TOKEN");
+            given(jwtProvider.createRefreshToken(1L)).willReturn("NEW_REFRESH_TOKEN");
+            given(jwtProvider.getRefreshTokenValidityInSeconds()).willReturn(604800L);
+
+            LocalDateTime expectedExpiresAtStart = LocalDateTime.now().plusSeconds(604800L);
+
+            // when
+            TokenResultDto result = userService.refreshAccessToken("OLD_REFRESH_TOKEN");
+            LocalDateTime expectedExpiresAtEnd = LocalDateTime.now().plusSeconds(604800L);
+
+            // then
+            assertThat(result.getNewRefreshToken()).isEqualTo("NEW_REFRESH_TOKEN");
+            verify(refreshTokenRepository).delete(savedToken);
+
+            ArgumentCaptor<RefreshToken> captor = ArgumentCaptor.forClass(RefreshToken.class);
+            verify(refreshTokenRepository).save(captor.capture());
+            assertThat(captor.getValue().getToken()).isEqualTo("NEW_REFRESH_TOKEN");
+            assertThat(captor.getValue().getUserId()).isEqualTo(1L);
+            assertThat(captor.getValue().getExpiresAt())
+                    .isBetween(expectedExpiresAtStart, expectedExpiresAtEnd);
         }
     }
 

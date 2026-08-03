@@ -82,7 +82,7 @@ public class UserService {
                 new RefreshToken(
                         refreshToken,
                         user.getId(),
-                        LocalDateTime.now().plusDays(14)
+                        refreshTokenExpiresAt()
                 )
         );
 
@@ -117,7 +117,7 @@ public class UserService {
                 new RefreshToken(
                         newRefreshToken,
                         user.getId(),
-                        LocalDateTime.now().plusDays(14)
+                        refreshTokenExpiresAt()
                 )
         );
 
@@ -125,6 +125,11 @@ public class UserService {
                 new TokenInfo(newAccessToken, 3600),
                 newRefreshToken
         );
+    }
+
+    private LocalDateTime refreshTokenExpiresAt() {
+        return LocalDateTime.now()
+                .plusSeconds(jwtProvider.getRefreshTokenValidityInSeconds());
     }
 
     @Transactional

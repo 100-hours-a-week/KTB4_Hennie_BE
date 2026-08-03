@@ -87,4 +87,8 @@ public class JwtProvider { // JWT 생성/파싱/검증 기능
     public Long getAccessTokenValidityInMilliseconds() {
         return jwtProperties.getAccessTokenExpSeconds() * 1000;
     }
+
+    public long getRefreshTokenValidityInSeconds() {
+        return jwtProperties.getRefreshTokenExpSeconds();
+    }
 }

@@ -4,6 +4,7 @@ import com.hennie.springdatajpa.global.exception.BusinessException;
 import com.hennie.springdatajpa.global.response.ApiResponse;
 import com.hennie.springdatajpa.global.response.FieldErrorResponse;
 import com.hennie.springdatajpa.global.response.ValidationErrorResponse;
+import org.hibernate.exception.ConstraintViolationException;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -59,11 +60,30 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(DataIntegrityViolationException.class)
     public ResponseEntity<ApiResponse<Void>> handleDataIntegrity(
             DataIntegrityViolationException exception) {
+        if (isUniqueViolation(exception)) {
+            // 동시 요청 등으로 복합 UNIQUE 위반 시 (예: 따닥 좋아요/신고) → 409
+            return ResponseEntity
+                    .status(HttpStatus.CONFLICT)
+                    .body(ApiResponse.of("DUPLICATE_REQUEST", null));
+        }
 
-        // 동시 요청 등으로 복합 UNIQUE 위반 시 (예: 따닥 좋아요/신고) → 409
         return ResponseEntity
-                .status(HttpStatus.CONFLICT)
-                .body(ApiResponse.of("DUPLICATE_REQUEST", null));
+                .status(HttpStatus.BAD_REQUEST)
+                .body(ApiResponse.of("INVALID_REQUEST", null));
+    }
+
+    private boolean isUniqueViolation(Throwable exception) {
+        Throwable cause = exception;
+        while (cause != null) {
+            if (cause instanceof ConstraintViolationException violation) {
+                return violation.getKind() == ConstraintViolationException.ConstraintKind.UNIQUE;
+            }
+            if (cause == cause.getCause()) {
+                break;
+            }
+            cause = cause.getCause();
+        }
+        return false;
     }
 
     @ExceptionHandler(MaxUploadSizeExceededException.class)

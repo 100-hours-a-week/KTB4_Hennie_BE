@@ -1,12 +1,14 @@
 package com.hennie.springdatajpa.domain.report.dto.request;
 
-import jakarta.validation.constraints.NotBlank;
+import com.hennie.springdatajpa.domain.report.entity.ReportReason;
+import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 @Getter
+@NoArgsConstructor
 public class ReportRequestDto {
 
-    // 신고 사유 (필수)
-    @NotBlank
-    private String reason;
+    @NotNull(message = "신고 사유는 필수값입니다.")
+    private ReportReason reason;
 }

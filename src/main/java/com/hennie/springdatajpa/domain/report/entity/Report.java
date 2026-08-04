@@ -26,9 +26,12 @@ public class Report {
     @Column(name = "report_id")
     private Long id;
 
+    // 생성자에서 항상 채워지므로 NOT NULL
     @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
     private ReportType type;
     @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
     private ReportStatus status;
 
     // 신고한 사용자
@@ -46,7 +49,9 @@ public class Report {
     @JoinColumn(name = "post_id") // FK
     private Post post;
 
-    private String reason;
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private ReportReason reason;
 
     @CreationTimestamp
     @Column(nullable = false, updatable = false)
@@ -55,7 +60,7 @@ public class Report {
     protected Report() {
     }
 
-    private Report(ReportType type, User reporter, User targetUser, Post post, String reason) {
+    private Report(ReportType type, User reporter, User targetUser, Post post, ReportReason reason) {
         this.type = type;
         this.status = ReportStatus.PENDING;
         this.reporter = reporter;
@@ -64,7 +69,7 @@ public class Report {
         this.reason = reason;
     }
 
-    public static Report forPost(User reporter, Post post, String reason) {
+    public static Report forPost(User reporter, Post post, ReportReason reason) {
         return new Report(ReportType.POST, reporter, null, post, reason);
     }
 }

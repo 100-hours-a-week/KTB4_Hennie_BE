@@ -16,6 +16,7 @@ import com.hennie.springdatajpa.domain.post.repository.PostEditHistoryRepository
 import com.hennie.springdatajpa.domain.post.repository.PostRepository;
 import com.hennie.springdatajpa.domain.post.repository.PostViewRepository;
 import com.hennie.springdatajpa.domain.report.entity.Report;
+import com.hennie.springdatajpa.domain.report.entity.ReportReason;
 import com.hennie.springdatajpa.domain.report.repository.ReportRepository;
 import com.hennie.springdatajpa.domain.user.entity.User;
 import com.hennie.springdatajpa.domain.user.repository.UserRepository;
@@ -214,7 +215,7 @@ public class PostService {
 
     @Transactional
     // 게시글 신고
-    public PostReportResponseDto reportPost(Long userId, Long postId, String reason) {
+    public PostReportResponseDto reportPost(Long userId, Long postId, ReportReason reason) {
         Post post = postRepository.findById(postId)
                 .orElseThrow(() -> new NotFoundException("POST_NOT_FOUND"));
 

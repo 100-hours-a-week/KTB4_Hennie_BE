@@ -42,3 +42,21 @@ cors:
 image:
   upload-directory: ./uploads
   base-url: http://localhost:8080/uploads
+
+crawler:
+  enabled: false
+  dry-run: true
+  published-from: 2025-01-01
+  request-delay-ms: 1000
+  timeout-ms: 15000
+  max-attempts: 2
+  max-response-bytes: 20971520
+  user-agent: DevbadakTechArticleImporter/1.0
+  sources:
+    - KAKAO
+    - NAVER_D2
+    - TOSS
+    - COUPANG
+    - WOOWA
+    - DAANGN
+    - OLIVE_YOUNG

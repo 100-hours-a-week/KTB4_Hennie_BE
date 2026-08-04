@@ -9,7 +9,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class PostUpdateRequestDto {
 
-    @Size(max = 26, message = "제목은 26자 이하여야 합니다.")
+    @Size(max = 100, message = "제목은 100자 이하여야 합니다.")
     private String title;
 
     private String content;

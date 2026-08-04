@@ -1,0 +1,14 @@
+# 일회성 초기 데이터 수집용 프로필이다. 기본은 dry-run이며 스케줄러를 사용하지 않는다.
+spring:
+  main:
+    web-application-type: none
+  jpa:
+    hibernate:
+      ddl-auto: none
+  devtools:
+    restart:
+      enabled: false
+
+crawler:
+  enabled: true
+  dry-run: true

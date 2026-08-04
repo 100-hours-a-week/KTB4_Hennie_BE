@@ -1,5 +1,6 @@
 package com.hennie.springdatajpa.domain.post.entity;
 
+import com.hennie.springdatajpa.domain.techarticle.entity.TechArticle;
 import com.hennie.springdatajpa.domain.user.entity.User;
 import jakarta.persistence.*;
 import lombok.Getter;
@@ -10,7 +11,10 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 
 @Entity
-@Table(name = "post")
+@Table(
+        name = "post",
+        indexes = @Index(name = "post_tech_article_id", columnList = "tech_article_id")
+)
 @Getter
 public class Post {
 
@@ -49,6 +53,16 @@ public class Post {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false) // FK
     private User author;
+
+    // N 게시글: 1 기술 아티클 (단방향)
+    // 일반 사용자 게시글은 원문 없이 존재할 수 있으므로 FK는 nullable이다.
+    @ManyToOne(fetch = FetchType.LAZY, optional = true)
+    @JoinColumn(
+            name = "tech_article_id",
+            nullable = true,
+            foreignKey = @ForeignKey(name = "fk_post_tech_article")
+    )
+    private TechArticle techArticle;
 
     @Enumerated(EnumType.STRING)
     @Column(length = 10)

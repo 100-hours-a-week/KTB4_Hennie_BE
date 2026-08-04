@@ -9,7 +9,7 @@
         post_id bigint not null,
         reply_to_id bigint,
         user_id bigint not null,
-        content varchar(3000),
+        content varchar(255),
         primary key (comment_id)
     ) engine=InnoDB;
 
@@ -21,9 +21,8 @@
         created_at datetime(6) not null,
         modified_at datetime(6) not null,
         post_id bigint not null auto_increment,
-        tech_article_id bigint,
         user_id bigint not null,
-        title varchar(100) not null,
+        title varchar(26) not null,
         content TEXT not null,
         category enum ('AI','BE','FE'),
         status enum ('DRAFT','PUBLISHED') not null,
@@ -74,20 +73,10 @@
         report_id bigint not null auto_increment,
         reporter_id bigint not null,
         target_user_id bigint,
-        reason enum ('HARMFUL_TO_YOUTH','HATE_SPEECH','ILLEGAL_INFORMATION','OFFENSIVE_EXPRESSION','PERSONAL_INFORMATION','SEXUAL_CONTENT','SPAM') not null,
-        status enum ('ACCEPTED','PENDING','REJECTED') not null,
-        type enum ('POST','USER') not null,
+        reason varchar(255),
+        status enum ('ACCEPTED','PENDING','REJECTED'),
+        type enum ('POST','USER'),
         primary key (report_id)
-    ) engine=InnoDB;
-
-    create table tech_article (
-        crawled_at datetime(6) not null,
-        published_at datetime(6),
-        tech_article_id bigint not null auto_increment,
-        title varchar(300) not null,
-        original_url varchar(768) not null,
-        enterprise enum ('COUPANG','DAANGN','KAKAO','NAVER_D2','OLIVE_YOUNG','TOSS','WOOWA') not null,
-        primary key (tech_article_id)
     ) engine=InnoDB;
 
     create table users (
@@ -101,9 +90,6 @@
         profile_url varchar(255),
         primary key (user_id)
     ) engine=InnoDB;
-
-    create index post_tech_article_id 
-       on post (tech_article_id);
 
     alter table post_likes 
        add constraint uq_post_like unique (post_id, user_id);
@@ -119,9 +105,6 @@
 
     alter table report 
        add constraint uq_report_user unique (reporter_id, target_user_id);
-
-    alter table tech_article 
-       add constraint tech_article_original_url unique (original_url);
 
     alter table users 
        add constraint uq_user_email unique (email);
@@ -153,11 +136,6 @@
        add constraint FK7ky67sgi7k0ayf22652f7763r 
        foreign key (user_id) 
        references users (user_id);
-
-    alter table post 
-       add constraint fk_post_tech_article 
-       foreign key (tech_article_id) 
-       references tech_article (tech_article_id);
 
     alter table post_likes 
        add constraint FKmxmoc9p5ndijnsqtvsjcuoxm3 

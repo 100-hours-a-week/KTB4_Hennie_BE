@@ -15,6 +15,8 @@ import java.util.List;
 @Table(name = "comment")
 @Getter
 public class Comment {
+    public static final int CONTENT_MAX_LENGTH = 3000;
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "comment_id")
@@ -27,6 +29,8 @@ public class Comment {
     @ManyToOne(fetch = FetchType.LAZY) // N:1 - 여러 댓글이 한 사용자에 속함
     @JoinColumn(name = "user_id", nullable = false)
     private User author; // FK
+
+    @Column(length = CONTENT_MAX_LENGTH)
     private String content;
 
     @CreationTimestamp

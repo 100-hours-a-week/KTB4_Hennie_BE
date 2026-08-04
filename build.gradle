@@ -27,6 +27,11 @@ dependencies {
 	implementation 'io.jsonwebtoken:jjwt-api:0.12.6'
 	implementation 'org.springframework.boot:spring-boot-starter-security'
 	implementation 'org.jsoup:jsoup:1.23.1'
+	// 스키마는 Flyway가 만들고, Hibernate는 validate로 검증만 한다(운영/테스트).
+	// Boot 4는 자동설정이 기술별 모듈로 분리돼 있어 spring-boot-flyway가 함께 필요하다.
+	implementation 'org.springframework.boot:spring-boot-flyway'
+	implementation 'org.flywaydb:flyway-core'
+	runtimeOnly 'org.flywaydb:flyway-mysql'
 
 	// 테스트
 	runtimeOnly 'org.springframework.boot:spring-boot-h2console'

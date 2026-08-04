@@ -48,6 +48,7 @@ public class SecurityConfig {
                     auth
                             .requestMatchers(HttpMethod.GET, "/posts").permitAll() // 게시글 목록/상세 조회는 비로그인 없이도 가능 (단, 하위 세부 기능들은 로그인이 필요함)
                             .requestMatchers(RegexRequestMatcher.regexMatcher(HttpMethod.GET, "^/posts/\\d+$")).permitAll()
+                            .requestMatchers(HttpMethod.GET, "/tech-articles").permitAll()
                             .requestMatchers(HttpMethod.GET, "/uploads/**").permitAll()
                             .requestMatchers(PUBLIC_ENDPOINTS).permitAll();
                     if (h2ConsoleEnabled()) {

@@ -7,6 +7,7 @@ import com.hennie.springdatajpa.domain.notification.service.NotificationReadServ
 import com.hennie.springdatajpa.domain.notification.service.NotificationSseService;
 import com.hennie.springdatajpa.global.response.ApiResponse;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.CacheControl;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -23,13 +24,18 @@ import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 @RequiredArgsConstructor
 public class NotificationController {
 
+    private static final String X_ACCEL_BUFFERING = "X-Accel-Buffering";
+
     private final NotificationQueryService notificationQueryService;
     private final NotificationReadService notificationReadService;
     private final NotificationSseService notificationSseService;
 
     @GetMapping(value = "/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
-    public SseEmitter stream(@AuthenticationPrincipal Long userId) {
-        return notificationSseService.connect(userId);
+    public ResponseEntity<SseEmitter> stream(@AuthenticationPrincipal Long userId) {
+        return ResponseEntity.ok()
+                .cacheControl(CacheControl.noCache())
+                .header(X_ACCEL_BUFFERING, "no")
+                .body(notificationSseService.connect(userId));
     }
 
     @GetMapping

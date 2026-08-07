@@ -3,6 +3,7 @@ package com.hennie.springdatajpa.auth.config;
 import com.hennie.springdatajpa.auth.jwt.JwtAuthenticationFilter;
 import com.hennie.springdatajpa.auth.support.SecurityErrorResponseWriter;
 import lombok.RequiredArgsConstructor;
+import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.env.Environment;
@@ -70,6 +71,14 @@ public class SecurityConfig {
                         UsernamePasswordAuthenticationFilter.class
                 );
         return http.build();
+    }
+
+    @Bean
+    public FilterRegistrationBean<JwtAuthenticationFilter> jwtAuthenticationFilterRegistration() {
+        FilterRegistrationBean<JwtAuthenticationFilter> registration =
+                new FilterRegistrationBean<>(jwtAuthenticationFilter);
+        registration.setEnabled(false);
+        return registration;
     }
 
     private boolean h2ConsoleEnabled() {

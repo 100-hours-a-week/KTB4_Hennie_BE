@@ -1,9 +1,9 @@
 package com.hennie.springdatajpa.domain.techarticle.service;
 
+import com.hennie.springdatajpa.domain.enterprise.entity.TechArticleCrawlSource;
 import com.hennie.springdatajpa.domain.techarticle.dto.response.TechArticleListItemResponseDto;
 import com.hennie.springdatajpa.domain.techarticle.dto.response.TechArticleListResponseDto;
 import com.hennie.springdatajpa.domain.techarticle.entity.TechArticle;
-import com.hennie.springdatajpa.domain.techarticle.entity.TechArticleSource;
 import com.hennie.springdatajpa.domain.techarticle.repository.TechArticleRepository;
 import com.hennie.springdatajpa.global.exception.BadRequestException;
 import lombok.RequiredArgsConstructor;
@@ -29,12 +29,15 @@ public class TechArticleQueryService {
             int size
     ) {
         validatePageParameters(page, size);
-        TechArticleSource selectedEnterprise = parseEnterprise(enterprise);
+        TechArticleCrawlSource selectedCrawlSource = parseEnterprise(enterprise);
         Pageable pageable = PageRequest.of(page - 1, size);
 
-        Page<TechArticle> articlePage = selectedEnterprise == null
+        Page<TechArticle> articlePage = selectedCrawlSource == null
                 ? techArticleRepository.findAll(pageable)
-                : techArticleRepository.findByEnterprise(selectedEnterprise, pageable);
+                : techArticleRepository.findByEnterpriseCrawlSource(
+                        selectedCrawlSource,
+                        pageable
+                );
         List<TechArticleListItemResponseDto> articles = articlePage.getContent().stream()
                 .map(TechArticleListItemResponseDto::new)
                 .toList();
@@ -55,13 +58,15 @@ public class TechArticleQueryService {
         }
     }
 
-    private TechArticleSource parseEnterprise(String enterprise) {
+    private TechArticleCrawlSource parseEnterprise(String enterprise) {
         if (enterprise == null || enterprise.isBlank()) {
             return null;
         }
 
         try {
-            return TechArticleSource.valueOf(enterprise.trim().toUpperCase(Locale.ROOT));
+            return TechArticleCrawlSource.valueOf(
+                    enterprise.trim().toUpperCase(Locale.ROOT)
+            );
         } catch (IllegalArgumentException exception) {
             throw new BadRequestException("invalidEnterprise");
         }

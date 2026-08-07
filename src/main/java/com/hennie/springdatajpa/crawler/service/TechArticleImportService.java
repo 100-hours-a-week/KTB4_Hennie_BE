@@ -1,6 +1,9 @@
 package com.hennie.springdatajpa.crawler.service;
 
 import com.hennie.springdatajpa.crawler.model.CrawledArticle;
+import com.hennie.springdatajpa.domain.enterprise.entity.Enterprise;
+import com.hennie.springdatajpa.domain.enterprise.entity.TechArticleCrawlSource;
+import com.hennie.springdatajpa.domain.enterprise.repository.EnterpriseRepository;
 import com.hennie.springdatajpa.domain.techarticle.entity.TechArticle;
 import com.hennie.springdatajpa.domain.techarticle.repository.TechArticleRepository;
 import lombok.RequiredArgsConstructor;
@@ -24,6 +27,7 @@ public class TechArticleImportService {
     private static final ZoneId ARTICLE_TIME_ZONE = ZoneId.of("Asia/Seoul");
 
     private final TechArticleRepository techArticleRepository;
+    private final EnterpriseRepository enterpriseRepository;
 
     @Transactional
     public ImportResult importArticles(List<CrawledArticle> articles, boolean dryRun) {
@@ -43,6 +47,8 @@ public class TechArticleImportService {
                         (left, right) -> left,
                         LinkedHashMap::new
                 ));
+        Map<TechArticleCrawlSource, Enterprise> enterpriseByCrawlSource =
+                loadEnterprises(articles);
 
         int inserted = 0;
         int updated = 0;
@@ -54,7 +60,12 @@ public class TechArticleImportService {
             LocalDateTime publishedAt = toLocalDateTime(article.publishedAt());
             TechArticle existing = existingByUrl.get(article.originalUrl());
             if (existing == null) {
-                TechArticle created = create(article, publishedAt, crawledAt);
+                TechArticle created = create(
+                        enterpriseByCrawlSource.get(article.source()),
+                        article,
+                        publishedAt,
+                        crawledAt
+                );
                 existingByUrl.put(article.originalUrl(), created);
                 inserted++;
                 if (!dryRun) {
@@ -89,17 +100,48 @@ public class TechArticleImportService {
     }
 
     private TechArticle create(
+            Enterprise enterprise,
             CrawledArticle article,
             LocalDateTime publishedAt,
             LocalDateTime crawledAt
     ) {
         return new TechArticle(
-                article.source(),
+                enterprise,
                 article.title(),
                 article.originalUrl(),
                 publishedAt,
                 crawledAt
         );
+    }
+
+    private Map<TechArticleCrawlSource, Enterprise> loadEnterprises(
+            List<CrawledArticle> articles
+    ) {
+        List<TechArticleCrawlSource> crawlSources = articles.stream()
+                .map(CrawledArticle::source)
+                .distinct()
+                .toList();
+        Map<TechArticleCrawlSource, Enterprise> enterprises = enterpriseRepository
+                .findAllByCrawlSourceIn(crawlSources).stream()
+                .collect(Collectors.toMap(
+                        Enterprise::getCrawlSource,
+                        Function.identity()
+                ));
+
+        for (TechArticleCrawlSource crawlSource : crawlSources) {
+            Enterprise enterprise = enterprises.get(crawlSource);
+            if (enterprise == null) {
+                throw new IllegalStateException(
+                        "ENTERPRISE_NOT_FOUND: " + crawlSource
+                );
+            }
+            if (!enterprise.isStatus()) {
+                throw new IllegalStateException(
+                        "ENTERPRISE_INACTIVE: " + crawlSource
+                );
+            }
+        }
+        return enterprises;
     }
 
     private LocalDateTime toLocalDateTime(Instant instant) {

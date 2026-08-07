@@ -3,7 +3,7 @@ package com.hennie.springdatajpa.crawler.parser;
 import com.hennie.springdatajpa.crawler.model.CrawledArticle;
 import com.hennie.springdatajpa.crawler.util.HtmlTextExtractor;
 import com.hennie.springdatajpa.crawler.util.PublicationDateParser;
-import com.hennie.springdatajpa.domain.techarticle.entity.TechArticleSource;
+import com.hennie.springdatajpa.domain.enterprise.entity.TechArticleCrawlSource;
 import lombok.RequiredArgsConstructor;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -31,7 +31,7 @@ public class WoowaHtmlParser { // 정적 HTML 방식
             }
 
             articles.add(new CrawledArticle(
-                    TechArticleSource.WOOWA,
+                    TechArticleCrawlSource.WOOWA,
                     htmlTextExtractor.extract(title.text()),
                     link.absUrl("href"),
                     publicationDateParser.parse(text(item, ".post-author-date"))

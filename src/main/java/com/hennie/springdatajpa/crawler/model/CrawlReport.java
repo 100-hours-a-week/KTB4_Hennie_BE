@@ -1,6 +1,6 @@
 package com.hennie.springdatajpa.crawler.model;
 
-import com.hennie.springdatajpa.domain.techarticle.entity.TechArticleSource;
+import com.hennie.springdatajpa.domain.enterprise.entity.TechArticleCrawlSource;
 
 import java.time.Duration;
 import java.util.List;
@@ -37,7 +37,7 @@ public record CrawlReport(List<SourceResult> sourceResults) {
     }
 
     public record SourceResult(
-            TechArticleSource source,
+            TechArticleCrawlSource source,
             int fetched,
             int inserted,
             int updated,
@@ -52,7 +52,7 @@ public record CrawlReport(List<SourceResult> sourceResults) {
     }
 
     public record Failure(
-            TechArticleSource source,
+            TechArticleCrawlSource source,
             String url,
             String reason
     ) {

@@ -4,8 +4,10 @@ import com.hennie.springdatajpa.domain.notification.dto.response.NotificationLis
 import com.hennie.springdatajpa.domain.notification.dto.response.UnreadNotificationCountResponseDto;
 import com.hennie.springdatajpa.domain.notification.service.NotificationQueryService;
 import com.hennie.springdatajpa.domain.notification.service.NotificationReadService;
+import com.hennie.springdatajpa.domain.notification.service.NotificationSseService;
 import com.hennie.springdatajpa.global.response.ApiResponse;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -14,6 +16,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 @RestController
 @RequestMapping("/notifications")
@@ -22,6 +25,12 @@ public class NotificationController {
 
     private final NotificationQueryService notificationQueryService;
     private final NotificationReadService notificationReadService;
+    private final NotificationSseService notificationSseService;
+
+    @GetMapping(value = "/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+    public SseEmitter stream(@AuthenticationPrincipal Long userId) {
+        return notificationSseService.connect(userId);
+    }
 
     @GetMapping
     public ResponseEntity<ApiResponse<NotificationListResponseDto>> getNotifications(

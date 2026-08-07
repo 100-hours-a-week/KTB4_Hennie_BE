@@ -47,6 +47,17 @@ public class SseEmitterRegistry {
                         .toList();
     }
 
+    public List<SseConnection> findAll() {
+        return emittersByUserId.entrySet().stream()
+                .flatMap(userEntry -> userEntry.getValue().entrySet().stream()
+                        .map(connectionEntry -> new SseConnection(
+                                userEntry.getKey(),
+                                connectionEntry.getKey(),
+                                connectionEntry.getValue()
+                        )))
+                .toList();
+    }
+
     public boolean remove(SseConnection connection) {
         AtomicBoolean removed = new AtomicBoolean(false);
 

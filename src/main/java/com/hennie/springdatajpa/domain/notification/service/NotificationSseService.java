@@ -16,6 +16,7 @@ import java.time.Instant;
 public class NotificationSseService {
 
     static final String CONNECTED_EVENT_NAME = "connected";
+    static final String HEARTBEAT_COMMENT = "heartbeat";
     static final Duration CONNECTION_TIMEOUT = Duration.ofHours(1);
 
     private final SseEmitterRegistry sseEmitterRegistry;
@@ -30,6 +31,15 @@ public class NotificationSseService {
     public void send(Long userId, SseEmitter.SseEventBuilder event) {
         for (SseConnection connection : sseEmitterRegistry.findAllByUserId(userId)) {
             send(connection, event);
+        }
+    }
+
+    public void sendHeartbeat() {
+        SseEmitter.SseEventBuilder heartbeat = SseEmitter.event()
+                .comment(HEARTBEAT_COMMENT);
+
+        for (SseConnection connection : sseEmitterRegistry.findAll()) {
+            send(connection, heartbeat);
         }
     }
 

@@ -6,6 +6,7 @@ import com.hennie.springdatajpa.domain.comment.dto.response.CommentResponseDto;
 import com.hennie.springdatajpa.domain.comment.dto.response.ReplyResponseDto;
 import com.hennie.springdatajpa.domain.comment.entity.Comment;
 import com.hennie.springdatajpa.domain.comment.repository.CommentRepository;
+import com.hennie.springdatajpa.domain.notification.service.CommentNotificationService;
 import com.hennie.springdatajpa.domain.post.entity.Post;
 import com.hennie.springdatajpa.domain.post.entity.PostStatus;
 import com.hennie.springdatajpa.domain.post.repository.PostRepository;
@@ -27,6 +28,7 @@ public class CommentService {
     private final CommentRepository commentRepository;
     private final PostRepository postRepository;
     private final UserRepository userRepository;
+    private final CommentNotificationService commentNotificationService;
 
     @Transactional
     public CommentResponseDto createComment(Long userId, Long postId, CommentRequestDto request) {
@@ -35,6 +37,7 @@ public class CommentService {
 
         Comment comment = new Comment(post, author, request.getContent());
         Comment savedComment = commentRepository.save(comment);
+        commentNotificationService.createForNewComment(post, savedComment);
 
         return new CommentResponseDto(savedComment);
     }
@@ -96,6 +99,7 @@ public class CommentService {
                 replyTo
         );
         Comment savedReply = commentRepository.save(reply);
+        commentNotificationService.createForNewReply(post, savedReply, replyTo);
         return new ReplyResponseDto(savedReply);
     }
 

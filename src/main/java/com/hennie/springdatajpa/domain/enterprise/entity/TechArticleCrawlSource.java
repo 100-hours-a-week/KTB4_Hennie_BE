@@ -1,6 +1,6 @@
-package com.hennie.springdatajpa.domain.techarticle.entity;
+package com.hennie.springdatajpa.domain.enterprise.entity;
 
-public enum TechArticleSource {
+public enum TechArticleCrawlSource {
 
     KAKAO(
             CrawlMethod.RSS,
@@ -42,7 +42,7 @@ public enum TechArticleSource {
     private final String endpoint;
     private final String baseUrl;
 
-    TechArticleSource(CrawlMethod crawlMethod, String endpoint, String baseUrl) {
+    TechArticleCrawlSource(CrawlMethod crawlMethod, String endpoint, String baseUrl) {
         this.crawlMethod = crawlMethod;
         this.endpoint = endpoint;
         this.baseUrl = baseUrl;

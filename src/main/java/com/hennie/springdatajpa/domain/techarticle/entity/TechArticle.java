@@ -1,12 +1,15 @@
 package com.hennie.springdatajpa.domain.techarticle.entity;
 
+import com.hennie.springdatajpa.domain.enterprise.entity.Enterprise;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.Index;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 import lombok.Getter;
@@ -17,6 +20,10 @@ import java.util.Objects;
 @Entity
 @Table(
         name = "tech_article",
+        indexes = @Index(
+                name = "ix_tech_article_enterprise",
+                columnList = "enterprise_id"
+        ),
         uniqueConstraints = {
                 @UniqueConstraint(name = "tech_article_original_url", columnNames = "original_url")
         }
@@ -30,9 +37,9 @@ public class TechArticle {
     @Column(name = "tech_article_id")
     private Long id;
 
-    @Enumerated(EnumType.STRING)
-    @Column(name = "enterprise", nullable = false)
-    private TechArticleSource enterprise;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "enterprise_id", nullable = false)
+    private Enterprise enterprise;
 
     @Column(nullable = false, length = TITLE_MAX_LENGTH)
     private String title;
@@ -49,7 +56,7 @@ public class TechArticle {
     }
 
     public TechArticle(
-            TechArticleSource enterprise,
+            Enterprise enterprise,
             String title,
             String originalUrl,
             LocalDateTime publishedAt,

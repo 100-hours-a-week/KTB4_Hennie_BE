@@ -3,7 +3,7 @@ package com.hennie.springdatajpa.crawler.parser;
 import com.hennie.springdatajpa.crawler.model.CrawledArticle;
 import com.hennie.springdatajpa.crawler.util.HtmlTextExtractor;
 import com.hennie.springdatajpa.crawler.util.PublicationDateParser;
-import com.hennie.springdatajpa.domain.techarticle.entity.TechArticleSource;
+import com.hennie.springdatajpa.domain.enterprise.entity.TechArticleCrawlSource;
 import lombok.RequiredArgsConstructor;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -24,7 +24,7 @@ public class AtomFeedParser implements FeedParser { // Atom 방식
     @Override
     public List<CrawledArticle> parse(
             Document document,
-            TechArticleSource source
+            TechArticleCrawlSource source
     ) {
         List<CrawledArticle> articles = new ArrayList<>();
 

@@ -1,6 +1,6 @@
 package com.hennie.springdatajpa.crawler.config;
 
-import com.hennie.springdatajpa.domain.techarticle.entity.TechArticleSource;
+import com.hennie.springdatajpa.domain.enterprise.entity.TechArticleCrawlSource;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotEmpty;
@@ -52,5 +52,5 @@ public class CrawlerProperties { // 실행할 출처 가져오기
     private String userAgent;
 
     @NotEmpty
-    private List<TechArticleSource> sources;
+    private List<TechArticleCrawlSource> sources;
 }

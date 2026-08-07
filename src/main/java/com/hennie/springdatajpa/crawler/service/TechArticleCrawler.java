@@ -11,7 +11,8 @@ import com.hennie.springdatajpa.crawler.parser.RssFeedParser;
 import com.hennie.springdatajpa.crawler.parser.WoowaHtmlParser;
 import com.hennie.springdatajpa.crawler.util.HtmlTextExtractor;
 import com.hennie.springdatajpa.crawler.util.UrlCanonicalizer;
-import com.hennie.springdatajpa.domain.techarticle.entity.TechArticleSource;
+import com.hennie.springdatajpa.domain.enterprise.entity.TechArticleCrawlSource;
+import com.hennie.springdatajpa.domain.enterprise.repository.EnterpriseRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -23,6 +24,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import static com.hennie.springdatajpa.domain.techarticle.entity.TechArticle.TITLE_MAX_LENGTH;
 
@@ -41,12 +43,22 @@ public class TechArticleCrawler { // 중앙 관리자 역할
     private final UrlCanonicalizer urlCanonicalizer;
     private final HtmlTextExtractor htmlTextExtractor;
     private final TechArticleImportService importService;
+    private final EnterpriseRepository enterpriseRepository;
 
     public CrawlReport crawl() {
         Set<String> executionUrls = new HashSet<>();
         List<SourceResult> sourceResults = new ArrayList<>();
 
-        for (TechArticleSource source : properties.getSources()) {
+        Set<TechArticleCrawlSource> activeCrawlSources = enterpriseRepository.findAll().stream()
+                .filter(enterprise -> enterprise.isStatus())
+                .map(enterprise -> enterprise.getCrawlSource())
+                .collect(Collectors.toSet());
+
+        for (TechArticleCrawlSource source : properties.getSources()) {
+            if (!activeCrawlSources.contains(source)) {
+                log.info("[CRAWLER] inactive enterprise skipped: {}", source);
+                continue;
+            }
             SourceResult result = crawlSource(source, executionUrls);
             sourceResults.add(result);
             logSourceResult(result);
@@ -66,7 +78,7 @@ public class TechArticleCrawler { // 중앙 관리자 역할
         return report;
     }
 
-    private SourceResult crawlSource(TechArticleSource source, Set<String> executionUrls) {
+    private SourceResult crawlSource(TechArticleCrawlSource source, Set<String> executionUrls) {
         Instant startedAt = Instant.now();
         List<Failure> failures = new ArrayList<>();
         int fetched = 0;
@@ -126,7 +138,7 @@ public class TechArticleCrawler { // 중앙 관리자 역할
         );
     }
 
-    private List<CrawledArticle> fetch(TechArticleSource source) {
+    private List<CrawledArticle> fetch(TechArticleCrawlSource source) {
         return switch (source.crawlMethod()) {
             case RSS -> rssFeedParser.parse(httpClient.getXml(source.endpoint()), source);
             case ATOM -> atomFeedParser.parse(httpClient.getXml(source.endpoint()), source);

@@ -13,8 +13,8 @@ public class NotificationSseSchedulingConfig {
     @Bean("taskScheduler")
     public TaskScheduler taskScheduler() {
         ThreadPoolTaskScheduler scheduler = new ThreadPoolTaskScheduler();
-        scheduler.setPoolSize(1);
-        scheduler.setThreadNamePrefix("notification-sse-heartbeat-");
+        scheduler.setPoolSize(2);
+        scheduler.setThreadNamePrefix("notification-sse-scheduler-");
         scheduler.setRemoveOnCancelPolicy(true);
         return scheduler;
     }

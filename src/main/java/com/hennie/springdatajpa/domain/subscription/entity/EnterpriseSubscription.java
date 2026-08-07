@@ -19,28 +19,28 @@ import java.time.LocalDateTime;
 
 @Entity
 @Table(
-        name = "article_subscription",
+        name = "enterprise_subscription",
         indexes = {
                 @Index(
-                        name = "ix_article_subscription_enterprise_status",
+                        name = "ix_enterprise_subscription_enterprise_status",
                         columnList = "enterprise_id, status"
                 ),
                 @Index(
-                        name = "ix_article_subscription_user_created",
+                        name = "ix_enterprise_subscription_user_created",
                         columnList = "user_id, created_at"
                 )
         },
         uniqueConstraints = @UniqueConstraint(
-                name = "uq_article_subscription_user_enterprise",
+                name = "uq_enterprise_subscription_user_enterprise",
                 columnNames = {"user_id", "enterprise_id"}
         )
 )
 @Getter
-public class ArticleSubscription {
+public class EnterpriseSubscription {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "article_subscription_id")
+    @Column(name = "enterprise_subscription_id")
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -57,10 +57,10 @@ public class ArticleSubscription {
     @Column(nullable = false)
     private LocalDateTime createdAt;
 
-    protected ArticleSubscription() {
+    protected EnterpriseSubscription() {
     }
 
-    public ArticleSubscription(User user, Enterprise enterprise) {
+    public EnterpriseSubscription(User user, Enterprise enterprise) {
         this.user = user;
         this.enterprise = enterprise;
         activate();

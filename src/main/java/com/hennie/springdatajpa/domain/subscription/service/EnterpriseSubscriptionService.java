@@ -2,9 +2,9 @@ package com.hennie.springdatajpa.domain.subscription.service;
 
 import com.hennie.springdatajpa.domain.enterprise.entity.Enterprise;
 import com.hennie.springdatajpa.domain.enterprise.repository.EnterpriseRepository;
-import com.hennie.springdatajpa.domain.subscription.dto.response.ArticleSubscriptionListResponseDto;
-import com.hennie.springdatajpa.domain.subscription.entity.ArticleSubscription;
-import com.hennie.springdatajpa.domain.subscription.repository.ArticleSubscriptionRepository;
+import com.hennie.springdatajpa.domain.subscription.dto.response.EnterpriseSubscriptionListResponseDto;
+import com.hennie.springdatajpa.domain.subscription.entity.EnterpriseSubscription;
+import com.hennie.springdatajpa.domain.subscription.repository.EnterpriseSubscriptionRepository;
 import com.hennie.springdatajpa.domain.user.entity.User;
 import com.hennie.springdatajpa.domain.user.repository.UserRepository;
 import com.hennie.springdatajpa.global.exception.DuplicateResourceException;
@@ -15,9 +15,9 @@ import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
-public class ArticleSubscriptionService {
+public class EnterpriseSubscriptionService {
 
-    private final ArticleSubscriptionRepository articleSubscriptionRepository;
+    private final EnterpriseSubscriptionRepository enterpriseSubscriptionRepository;
     private final EnterpriseRepository enterpriseRepository;
     private final UserRepository userRepository;
 
@@ -29,12 +29,12 @@ public class ArticleSubscriptionService {
         if (!enterprise.canSubscribe()) {
             throw new DuplicateResourceException("ENTERPRISE_INACTIVE");
         }
-        ArticleSubscription subscription = articleSubscriptionRepository
+        EnterpriseSubscription subscription = enterpriseSubscriptionRepository
                 .findByUserIdAndEnterpriseId(userId, enterpriseId)
-                .orElseGet(() -> new ArticleSubscription(user, enterprise));
+                .orElseGet(() -> new EnterpriseSubscription(user, enterprise));
 
         if (subscription.getId() == null) {
-            articleSubscriptionRepository.save(subscription);
+            enterpriseSubscriptionRepository.save(subscription);
             return;
         }
         if (!subscription.isStatus()) {
@@ -48,18 +48,18 @@ public class ArticleSubscriptionService {
                 .orElseThrow(() -> new NotFoundException("USER_NOT_FOUND"));
         getEnterprise(enterpriseId);
 
-        articleSubscriptionRepository
+        enterpriseSubscriptionRepository
                 .findByUserIdAndEnterpriseId(userId, enterpriseId)
-                .ifPresent(articleSubscriptionRepository::delete);
+                .ifPresent(EnterpriseSubscription::deactivate);
     }
 
     @Transactional(readOnly = true)
-    public ArticleSubscriptionListResponseDto getMySubscriptions(Long userId) {
+    public EnterpriseSubscriptionListResponseDto getMySubscriptions(Long userId) {
         if (!userRepository.existsById(userId)) {
             throw new NotFoundException("USER_NOT_FOUND");
         }
-        return new ArticleSubscriptionListResponseDto(
-                articleSubscriptionRepository.findAllByUserIdOrderByCreatedAtDesc(userId)
+        return new EnterpriseSubscriptionListResponseDto(
+                enterpriseSubscriptionRepository.findAllByUserIdOrderByCreatedAtDesc(userId)
         );
     }
 

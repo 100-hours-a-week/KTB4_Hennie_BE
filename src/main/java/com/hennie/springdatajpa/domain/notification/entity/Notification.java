@@ -145,6 +145,24 @@ public class Notification {
         );
     }
 
+    public static Notification enterpriseArticle(
+            User recipient,
+            TechArticle article,
+            Enterprise enterprise,
+            String message
+    ) {
+        return new Notification(
+                recipient,
+                null,
+                NotificationType.SUBSCRIBED_ENTERPRISE_ARTICLE,
+                null,
+                null,
+                article,
+                enterprise,
+                message
+        );
+    }
+
     public void markAsRead() {
         if (readAt == null) {
             readAt = LocalDateTime.now();

@@ -1,6 +1,7 @@
 package com.hennie.springdatajpa.domain.notification.repository;
 
 import com.hennie.springdatajpa.domain.notification.entity.Notification;
+import com.hennie.springdatajpa.domain.notification.entity.NotificationType;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.EntityGraph;
@@ -10,6 +11,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.time.LocalDateTime;
+import java.util.Set;
 import java.util.Optional;
 
 public interface NotificationRepository extends JpaRepository<Notification, Long> {
@@ -23,6 +25,17 @@ public interface NotificationRepository extends JpaRepository<Notification, Long
     long countByRecipientIdAndReadAtIsNull(Long recipientId);
 
     Optional<Notification> findByIdAndRecipientId(Long id, Long recipientId);
+
+    @Query("""
+            select notification.recipient.id
+            from Notification notification
+            where notification.notificationType = :notificationType
+              and notification.article.id = :articleId
+            """)
+    Set<Long> findRecipientIdsByNotificationTypeAndArticleId(
+            @Param("notificationType") NotificationType notificationType,
+            @Param("articleId") Long articleId
+    );
 
     @Modifying(clearAutomatically = true, flushAutomatically = true)
     @Query("""

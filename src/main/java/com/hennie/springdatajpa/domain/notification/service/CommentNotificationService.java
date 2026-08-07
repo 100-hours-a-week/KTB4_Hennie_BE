@@ -3,16 +3,21 @@ package com.hennie.springdatajpa.domain.notification.service;
 import com.hennie.springdatajpa.domain.comment.entity.Comment;
 import com.hennie.springdatajpa.domain.notification.entity.Notification;
 import com.hennie.springdatajpa.domain.notification.entity.NotificationType;
+import com.hennie.springdatajpa.domain.notification.event.NotificationCreatedEvent;
 import com.hennie.springdatajpa.domain.notification.repository.NotificationRepository;
 import com.hennie.springdatajpa.domain.post.entity.Post;
 import com.hennie.springdatajpa.domain.user.entity.User;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Objects;
 
 @Service
 @RequiredArgsConstructor
+@Transactional(propagation = Propagation.MANDATORY)
 public class CommentNotificationService {
 
     private static final String POST_COMMENT_MESSAGE =
@@ -23,6 +28,7 @@ public class CommentNotificationService {
             "%s님이 회원님의 답글에 답글을 남겼습니다.";
 
     private final NotificationRepository notificationRepository;
+    private final ApplicationEventPublisher eventPublisher;
 
     public void createForNewComment(Post post, Comment comment) {
         User actor = comment.getAuthor();
@@ -31,7 +37,7 @@ public class CommentNotificationService {
             return;
         }
 
-        notificationRepository.save(Notification.comment(
+        saveAndPublish(Notification.comment(
                 recipient,
                 actor,
                 NotificationType.POST_COMMENT,
@@ -56,7 +62,7 @@ public class CommentNotificationService {
                 ? COMMENT_REPLY_MESSAGE.formatted(actor.getNickname())
                 : REPLY_REPLY_MESSAGE.formatted(actor.getNickname());
 
-        notificationRepository.save(Notification.comment(
+        saveAndPublish(Notification.comment(
                 recipient,
                 actor,
                 notificationType,
@@ -64,6 +70,11 @@ public class CommentNotificationService {
                 reply,
                 message
         ));
+    }
+
+    private void saveAndPublish(Notification notification) {
+        Notification savedNotification = notificationRepository.save(notification);
+        eventPublisher.publishEvent(NotificationCreatedEvent.from(savedNotification));
     }
 
     private boolean isSelfNotification(User actor, User recipient) {

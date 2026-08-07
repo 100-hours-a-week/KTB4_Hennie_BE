@@ -5,8 +5,10 @@ import com.hennie.springdatajpa.domain.enterprise.entity.Enterprise;
 import com.hennie.springdatajpa.domain.enterprise.entity.TechArticleCrawlSource;
 import com.hennie.springdatajpa.domain.enterprise.repository.EnterpriseRepository;
 import com.hennie.springdatajpa.domain.techarticle.entity.TechArticle;
+import com.hennie.springdatajpa.domain.techarticle.event.TechArticleCreatedEvent;
 import com.hennie.springdatajpa.domain.techarticle.repository.TechArticleRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -28,6 +30,7 @@ public class TechArticleImportService {
 
     private final TechArticleRepository techArticleRepository;
     private final EnterpriseRepository enterpriseRepository;
+    private final ApplicationEventPublisher eventPublisher;
 
     @Transactional
     public ImportResult importArticles(List<CrawledArticle> articles, boolean dryRun) {
@@ -55,6 +58,7 @@ public class TechArticleImportService {
         int skipped = 0;
         LocalDateTime crawledAt = LocalDateTime.now(ARTICLE_TIME_ZONE);
         List<TechArticle> changedArticles = new ArrayList<>();
+        List<TechArticle> createdArticles = new ArrayList<>();
 
         for (CrawledArticle article : articles) {
             LocalDateTime publishedAt = toLocalDateTime(article.publishedAt());
@@ -70,6 +74,7 @@ public class TechArticleImportService {
                 inserted++;
                 if (!dryRun) {
                     changedArticles.add(created);
+                    createdArticles.add(created);
                 }
                 continue;
             }
@@ -95,6 +100,9 @@ public class TechArticleImportService {
 
         if (!dryRun && !changedArticles.isEmpty()) {
             techArticleRepository.saveAll(changedArticles);
+            createdArticles.stream()
+                    .map(TechArticleCreatedEvent::from)
+                    .forEach(eventPublisher::publishEvent);
         }
         return new ImportResult(inserted, updated, skipped);
     }

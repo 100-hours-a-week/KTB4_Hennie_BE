@@ -1,7 +1,7 @@
 package com.hennie.springdatajpa.domain.subscription.controller;
 
-import com.hennie.springdatajpa.domain.subscription.dto.response.ArticleSubscriptionListResponseDto;
-import com.hennie.springdatajpa.domain.subscription.service.ArticleSubscriptionService;
+import com.hennie.springdatajpa.domain.subscription.dto.response.EnterpriseSubscriptionListResponseDto;
+import com.hennie.springdatajpa.domain.subscription.service.EnterpriseSubscriptionService;
 import com.hennie.springdatajpa.global.response.ApiResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -14,18 +14,18 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping("/article-subscriptions")
+@RequestMapping("/enterprise-subscriptions")
 @RequiredArgsConstructor
-public class ArticleSubscriptionController {
+public class EnterpriseSubscriptionController {
 
-    private final ArticleSubscriptionService articleSubscriptionService;
+    private final EnterpriseSubscriptionService enterpriseSubscriptionService;
 
     @PutMapping("/{enterpriseId}")
     public ResponseEntity<Void> subscribe(
             @AuthenticationPrincipal Long userId,
             @PathVariable Long enterpriseId
     ) {
-        articleSubscriptionService.subscribe(userId, enterpriseId);
+        enterpriseSubscriptionService.subscribe(userId, enterpriseId);
         return ResponseEntity.noContent().build();
     }
 
@@ -34,18 +34,17 @@ public class ArticleSubscriptionController {
             @AuthenticationPrincipal Long userId,
             @PathVariable Long enterpriseId
     ) {
-        articleSubscriptionService.unsubscribe(userId, enterpriseId);
+        enterpriseSubscriptionService.unsubscribe(userId, enterpriseId);
         return ResponseEntity.noContent().build();
     }
 
     @GetMapping
-    public ResponseEntity<ApiResponse<ArticleSubscriptionListResponseDto>> getMySubscriptions(
+    public ResponseEntity<ApiResponse<EnterpriseSubscriptionListResponseDto>> getMySubscriptions(
             @AuthenticationPrincipal Long userId
     ) {
         return ResponseEntity.ok(ApiResponse.of(
-                "ARTICLE_SUBSCRIPTIONS_FOUND",
-                articleSubscriptionService.getMySubscriptions(userId)
+                "ENTERPRISE_SUBSCRIPTIONS_FOUND",
+                enterpriseSubscriptionService.getMySubscriptions(userId)
         ));
     }
-
 }

@@ -7,7 +7,7 @@ import java.util.List;
 
 @Getter
 @RequiredArgsConstructor
-public class ArticleSubscriptionListResponseDto {
+public class EnterpriseSubscriptionListResponseDto {
 
-    private final List<ArticleSubscriptionResponseDto> subscriptions;
+    private final List<EnterpriseSubscriptionResponseDto> subscriptions;
 }

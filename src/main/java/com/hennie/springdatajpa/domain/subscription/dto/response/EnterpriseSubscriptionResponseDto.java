@@ -5,7 +5,7 @@ import lombok.RequiredArgsConstructor;
 
 @Getter
 @RequiredArgsConstructor
-public class ArticleSubscriptionResponseDto {
+public class EnterpriseSubscriptionResponseDto {
 
     private final Long enterpriseId;
     private final boolean status;
